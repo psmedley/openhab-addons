@@ -34,11 +34,11 @@
 			</parameter>
 			<parameter name="email" type="text" required="true">
 				<label>Local Powerwall Login Email</label>
-				<description>Tesla Account Email</description>
+				<description>Local Powerwall Account Email</description>
 			</parameter>
 			<parameter name="password" type="text" required="true">
 				<label>Local Powerwall Login Password</label>
-				<description>Tesla Account Password</description>
+				<description>Local Powerwall Account Password</description>
 				<context>password</context>
 			</parameter>
 			<parameter name="refresh" type="integer" required="false">
