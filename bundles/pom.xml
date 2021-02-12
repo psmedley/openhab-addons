@@ -528,7 +528,6 @@
     <module>org.openhab.binding.sonos</module>
         
     <module>org.openhab.binding.sonyaudio</module>
-    <module>org.openhab.binding.sony</module>
         
     <module>org.openhab.binding.sonyprojector</module>
         
