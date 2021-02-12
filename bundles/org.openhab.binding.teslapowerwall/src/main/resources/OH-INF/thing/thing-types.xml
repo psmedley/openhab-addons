@@ -32,19 +32,19 @@
 				<label>Hostname/IP Address</label>
 				<description>The host name or IP address of the Tesla Powerwall.</description>
 			</parameter>
+			<parameter name="email" type="text" required="true">
+				<label>Local Powerwall Login Email</label>
+				<description>Tesla Account Email</description>
+			</parameter>
+			<parameter name="password" type="text" required="true">
+				<label>Local Powerwall Login Password</label>
+				<description>Tesla Account Password</description>
+				<context>password</context>
+			</parameter>
 			<parameter name="refresh" type="integer" required="false">
 				<label>Refresh Interval</label>
 				<description>Specifies the refresh interval in seconds.</description>
 				<default>10</default>
-			</parameter>
-			<parameter name="email" type="text" required="false">
-				<label>Login Email</label>
-				<description>Tesla Account Email - optionally used for operating mode and reserve</description>
-			</parameter>
-			<parameter name="password" type="text" required="false">
-				<label>Login Password</label>
-				<description>Tesla Account Password - optionally used for operating mode and reserve</description>
-				<context>password</context>
 			</parameter>
 		</config-description>
 
