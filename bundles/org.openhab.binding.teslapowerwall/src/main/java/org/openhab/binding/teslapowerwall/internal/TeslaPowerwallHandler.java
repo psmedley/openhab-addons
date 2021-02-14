@@ -114,7 +114,7 @@ public class TeslaPowerwallHandler extends BaseThingHandler {
     private void pollStatus() throws IOException {
 
         TeslaPowerwallConfiguration config = getConfigAs(TeslaPowerwallConfiguration.class);
-        if (config.email != null) {
+        if (config.email != null && config.password != null) {
             String token = webTargets.getToken(config.email, config.password);
             Operations operations = webTargets.getOperations(token);
             if (operations != null) {
@@ -136,12 +136,8 @@ public class TeslaPowerwallHandler extends BaseThingHandler {
             if (gridStatus != null) {
                 updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSTATUS,
                         new StringType(gridStatus.grid_status));
-                if (gridStatus.grid_servicesactive == "true") {
-                    updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSERVICESACTIVE, OnOffType.ON);
-                } else {
-                    updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSERVICESACTIVE,
-                            OnOffType.OFF);
-                }
+                updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSERVICES,
+                        (gridStatus.grid_services ? OnOffType.ON : OnOffType.OFF));
 
             }
             if (meterAggregates != null) {
@@ -171,6 +167,9 @@ public class TeslaPowerwallHandler extends BaseThingHandler {
                         new QuantityType<>(meterAggregates.solar_energyimported, Units.KILOWATT_HOUR));
             }
 
+        } else {// include log message for pre-existing installations
+            logger.info(
+                    "Local powerwall login e-mail and password are now required for proper operations. Please update configuration.");
         }
     }
 }

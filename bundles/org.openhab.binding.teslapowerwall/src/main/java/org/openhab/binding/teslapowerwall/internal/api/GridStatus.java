@@ -28,7 +28,7 @@ public class GridStatus {
     private static Logger LOGGER = LoggerFactory.getLogger(GridStatus.class);
 
     public String grid_status;
-    public String grid_servicesactive;
+    public Boolean grid_services;
 
     private GridStatus() {
     }
@@ -39,7 +39,7 @@ public class GridStatus {
         JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
         GridStatus info = new GridStatus();
         info.grid_status = jsonObject.get("grid_status").getAsString();
-        info.grid_servicesactive = jsonObject.get("grid_services_active").getAsString();
+        info.grid_services = jsonObject.get("grid_services_active").getAsString().equalsIgnoreCase("true");
         return info;
     }
 }
