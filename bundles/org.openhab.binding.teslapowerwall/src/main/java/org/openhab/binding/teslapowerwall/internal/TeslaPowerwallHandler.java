@@ -23,6 +23,7 @@ import org.openhab.binding.teslapowerwall.internal.api.BatterySOE;
 import org.openhab.binding.teslapowerwall.internal.api.GridStatus;
 import org.openhab.binding.teslapowerwall.internal.api.MeterAggregates;
 import org.openhab.binding.teslapowerwall.internal.api.Operations;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.MetricPrefix;
@@ -135,6 +136,13 @@ public class TeslaPowerwallHandler extends BaseThingHandler {
             if (gridStatus != null) {
                 updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSTATUS,
                         new StringType(gridStatus.grid_status));
+                if (gridStatus.grid_servicesactive == "true") {
+                    updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSERVICESACTIVE, OnOffType.ON);
+                } else {
+                    updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSERVICESACTIVE,
+                            OnOffType.OFF);
+                }
+
             }
             if (meterAggregates != null) {
                 updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRID_INSTPOWER,
