@@ -10,6 +10,7 @@
 
 		<channels>
 			<channel id="gridstatus" typeId="teslapowerwall-gridstatus"/>
+			<channel id="gridservicesactive" typeId="teslapowerwall-gridservicesactive"/>
 			<channel id="batterysoe" typeId="teslapowerwall-batterysoe"/>
 			<channel id="mode" typeId="teslapowerwall-mode"/>
 			<channel id="reserve" typeId="teslapowerwall-reserve"/>
@@ -54,6 +55,12 @@
 		<item-type>String</item-type>
 		<label>Grid Status</label>
 		<description>Current status of the Power Grid</description>
+		<state readOnly="true"/>
+	</channel-type>
+	<channel-type id="teslapowerwall-gridservicesactive">
+		<item-type>Switch</item-type>
+		<label>Grid Services Active</label>
+		<description>Grid Services Activation Status</description>
 		<state readOnly="true"/>
 	</channel-type>
 	<channel-type id="teslapowerwall-batterysoe">
