@@ -10,12 +10,14 @@
 
 		<channels>
 			<channel id="gridstatus" typeId="teslapowerwall-gridstatus"/>
+			<channel id="gridconnected" typeId="teslapowerwall-gridconnected"/>
 			<channel id="gridservices" typeId="teslapowerwall-gridservices"/>
 			<channel id="batterysoe" typeId="teslapowerwall-batterysoe"/>
 			<channel id="mode" typeId="teslapowerwall-mode"/>
 			<channel id="reserve" typeId="teslapowerwall-reserve"/>
 			<channel id="grid_instpower" typeId="teslapowerwall-grid_instpower"/>
 			<channel id="battery_instpower" typeId="teslapowerwall-battery_instpower"/>
+			<channel id="battery_frequency" typeId="teslapowerwall-battery_frequency"/>
 			<channel id="home_instpower" typeId="teslapowerwall-home_instpower"/>
 			<channel id="solar_instpower" typeId="teslapowerwall-solar_instpower"/>
 			<channel id="grid_energyexported" typeId="teslapowerwall-grid_energyexported"/>
@@ -50,7 +52,12 @@
 		</config-description>
 
 	</thing-type>
-
+	<channel-type id="teslapowerwall-gridconnected">
+		<item-type>Switch</item-type>
+		<label>Grid Connected</label>
+		<description>Grid Connected status</description>
+		<state readOnly="true"/>
+	</channel-type>
 	<channel-type id="teslapowerwall-gridstatus">
 		<item-type>String</item-type>
 		<label>Grid Status</label>
@@ -91,6 +98,12 @@
 		<label>Instanteous Battery Power</label>
 		<description>Instantaneous Battery Power Supply</description>
 		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+	<channel-type id="teslapowerwall-battery_frequency">
+		<item-type>Number:Frequency</item-type>
+		<label>Battery Frequency</label>
+		<description>Battery Frequency</description>
+		<state readOnly="true" pattern="%.2f %unit%"/>
 	</channel-type>
 	<channel-type id="teslapowerwall-home_instpower">
 		<item-type>Number:Power</item-type>
