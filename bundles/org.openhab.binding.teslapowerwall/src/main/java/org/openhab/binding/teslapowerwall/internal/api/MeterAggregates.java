@@ -29,7 +29,6 @@ public class MeterAggregates {
 
     public double grid_instpower;
     public double battery_instpower;
-    public double battery_frequency;
     public double home_instpower;
     public double solar_instpower;
     public double grid_energyexported;
@@ -57,7 +56,6 @@ public class MeterAggregates {
 
         JsonObject batteryjson = jsonObject.get("battery").getAsJsonObject();
         info.battery_instpower = batteryjson.get("instant_power").getAsDouble() / 1000;
-        info.battery_frequency = batteryjson.get("frequency").getAsDouble();
         info.battery_energyexported = batteryjson.get("energy_exported").getAsDouble() / 1000;
         info.battery_energyimported = batteryjson.get("energy_imported").getAsDouble() / 1000;
 

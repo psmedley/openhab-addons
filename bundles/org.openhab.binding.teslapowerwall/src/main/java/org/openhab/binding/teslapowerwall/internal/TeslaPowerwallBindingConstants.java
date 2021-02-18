@@ -34,7 +34,6 @@ public class TeslaPowerwallBindingConstants {
 
     // List of all Channel ids
     public static final String CHANNEL_TESLAPOWERWALL_GRIDSTATUS = "gridstatus";
-    public static final String CHANNEL_TESLAPOWERWALL_GRIDCONNECTED = "gridconnected";
     public static final String CHANNEL_TESLAPOWERWALL_GRIDSERVICES = "gridservices";
     public static final String CHANNEL_TESLAPOWERWALL_BATTERYSOE = "batterysoe";
     public static final String CHANNEL_TESLAPOWERWALL_MODE = "mode";
@@ -43,7 +42,6 @@ public class TeslaPowerwallBindingConstants {
     public static final String CHANNEL_TESLAPOWERWALL_GRID_ENERGYEXPORTED = "grid_energyexported";
     public static final String CHANNEL_TESLAPOWERWALL_GRID_ENERGYIMPORTED = "grid_energyimported";
     public static final String CHANNEL_TESLAPOWERWALL_BATTERY_INSTPOWER = "battery_instpower";
-    public static final String CHANNEL_TESLAPOWERWALL_BATTERY_FREQUENCY = "battery_frequency";
     public static final String CHANNEL_TESLAPOWERWALL_BATTERY_ENERGYIMPORTED = "battery_energyimported";
     public static final String CHANNEL_TESLAPOWERWALL_BATTERY_ENERGYEXPORTED = "battery_energyexported";
     public static final String CHANNEL_TESLAPOWERWALL_HOME_INSTPOWER = "home_instpower";

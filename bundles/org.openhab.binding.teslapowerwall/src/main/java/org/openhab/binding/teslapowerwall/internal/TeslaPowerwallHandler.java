@@ -138,8 +138,6 @@ public class TeslaPowerwallHandler extends BaseThingHandler {
                         new StringType(gridStatus.grid_status));
                 updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSERVICES,
                         (gridStatus.grid_services ? OnOffType.ON : OnOffType.OFF));
-                updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDCONNECTED,
-                        (gridStatus.grid_connected ? OnOffType.ON : OnOffType.OFF));
 
             }
             if (meterAggregates != null) {
@@ -151,8 +149,6 @@ public class TeslaPowerwallHandler extends BaseThingHandler {
                         new QuantityType<>(meterAggregates.grid_energyimported, Units.KILOWATT_HOUR));
                 updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_BATTERY_INSTPOWER,
                         new QuantityType<>(meterAggregates.battery_instpower, MetricPrefix.KILO(Units.WATT)));
-                updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_BATTERY_FREQUENCY,
-                        new QuantityType<>(meterAggregates.battery_frequency, Units.HERTZ));
                 updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_BATTERY_ENERGYEXPORTED,
                         new QuantityType<>(meterAggregates.battery_energyexported, Units.KILOWATT_HOUR));
                 updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_BATTERY_ENERGYIMPORTED,

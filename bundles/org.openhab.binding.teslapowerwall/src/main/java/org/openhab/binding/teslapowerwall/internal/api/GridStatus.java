@@ -29,7 +29,6 @@ public class GridStatus {
 
     public String grid_status;
     public Boolean grid_services;
-    public Boolean grid_connected;
 
     private GridStatus() {
     }
@@ -41,7 +40,6 @@ public class GridStatus {
         GridStatus info = new GridStatus();
         info.grid_status = jsonObject.get("grid_status").getAsString();
         info.grid_services = jsonObject.get("grid_services_active").getAsString().equalsIgnoreCase("true");
-        info.grid_connected = jsonObject.get("grid_status").getAsString().equalsIgnoreCase("SystemGridConnected");
         return info;
     }
 }
