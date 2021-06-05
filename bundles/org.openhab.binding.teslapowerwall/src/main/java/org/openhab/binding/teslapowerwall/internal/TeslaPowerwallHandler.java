@@ -23,6 +23,7 @@ import org.openhab.binding.teslapowerwall.internal.api.BatterySOE;
 import org.openhab.binding.teslapowerwall.internal.api.GridStatus;
 import org.openhab.binding.teslapowerwall.internal.api.MeterAggregates;
 import org.openhab.binding.teslapowerwall.internal.api.Operations;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.MetricPrefix;
@@ -113,7 +114,7 @@ public class TeslaPowerwallHandler extends BaseThingHandler {
     private void pollStatus() throws IOException {
 
         TeslaPowerwallConfiguration config = getConfigAs(TeslaPowerwallConfiguration.class);
-        if (config.email != null) {
+        if (config.email != null && config.password != null) {
             String token = webTargets.getToken(config.email, config.password);
             Operations operations = webTargets.getOperations(token);
             if (operations != null) {
@@ -135,6 +136,9 @@ public class TeslaPowerwallHandler extends BaseThingHandler {
             if (gridStatus != null) {
                 updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSTATUS,
                         new StringType(gridStatus.grid_status));
+                updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRIDSERVICES,
+                        (gridStatus.grid_services ? OnOffType.ON : OnOffType.OFF));
+
             }
             if (meterAggregates != null) {
                 updateState(TeslaPowerwallBindingConstants.CHANNEL_TESLAPOWERWALL_GRID_INSTPOWER,
@@ -163,6 +167,9 @@ public class TeslaPowerwallHandler extends BaseThingHandler {
                         new QuantityType<>(meterAggregates.solar_energyimported, Units.KILOWATT_HOUR));
             }
 
+        } else {// include log message for pre-existing installations
+            logger.info(
+                    "Local powerwall login e-mail and password are now required for proper operations. Please update configuration.");
         }
     }
 }
