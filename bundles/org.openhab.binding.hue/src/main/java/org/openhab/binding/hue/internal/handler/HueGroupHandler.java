@@ -57,12 +57,13 @@ import org.slf4j.LoggerFactory;
  * @author Laurent Garnier - Initial contribution
  */
 @NonNullByDefault
-public class HueGroupHandler extends BaseThingHandler implements GroupStatusListener {
+public class HueGroupHandler extends BaseThingHandler implements HueLightActionsHandler, GroupStatusListener {
+
     public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_GROUP);
     public static final String PROPERTY_MEMBERS = "members";
 
     private final Logger logger = LoggerFactory.getLogger(HueGroupHandler.class);
-    private final HueStateDescriptionOptionProvider stateDescriptionOptionProvider;
+    private final HueStateDescriptionProvider stateDescriptionOptionProvider;
 
     private @NonNullByDefault({}) String groupId;
 
@@ -79,7 +80,7 @@ public class HueGroupHandler extends BaseThingHandler implements GroupStatusList
 
     private List<String> consoleScenesList = List.of();
 
-    public HueGroupHandler(Thing thing, HueStateDescriptionOptionProvider stateDescriptionOptionProvider) {
+    public HueGroupHandler(Thing thing, HueStateDescriptionProvider stateDescriptionOptionProvider) {
         super(thing);
         this.stateDescriptionOptionProvider = stateDescriptionOptionProvider;
     }
@@ -168,6 +169,7 @@ public class HueGroupHandler extends BaseThingHandler implements GroupStatusList
         handleCommand(channelUID.getId(), command, defaultFadeTime);
     }
 
+    @Override
     public void handleCommand(String channel, Command command, long fadeTime) {
         HueClient bridgeHandler = getHueClient();
         if (bridgeHandler == null) {

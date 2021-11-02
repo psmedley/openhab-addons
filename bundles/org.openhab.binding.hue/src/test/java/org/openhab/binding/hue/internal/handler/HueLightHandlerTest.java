@@ -19,7 +19,8 @@ import static org.openhab.binding.hue.internal.HueBindingConstants.*;
 
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.openhab.binding.hue.internal.FullConfig;
@@ -39,7 +40,6 @@ import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingUID;
 import org.openhab.core.thing.binding.ThingHandlerCallback;
-import org.openhab.core.thing.i18n.ChannelTypeI18nLocalizationService;
 import org.openhab.core.types.Command;
 
 import com.google.gson.Gson;
@@ -57,6 +57,7 @@ import com.google.gson.JsonParser;
  * @author Simon Kaufmann - migrated to plain Java test
  * @author Christoph Weitkamp - Added support for bulbs using CIE XY colormode only
  */
+@NonNullByDefault
 public class HueLightHandlerTest {
 
     private static final int MIN_COLOR_TEMPERATURE = 153;
@@ -67,12 +68,7 @@ public class HueLightHandlerTest {
     private static final String OSRAM_MODEL_TYPE = HueLightHandler.OSRAM_PAR16_50_TW_MODEL_ID;
     private static final String OSRAM_MODEL_TYPE_ID = HueLightHandler.OSRAM_PAR16_50_TW_MODEL_ID;
 
-    private Gson gson;
-
-    @BeforeEach
-    public void setUp() {
-        gson = new Gson();
-    }
+    private final Gson gson = new Gson();
 
     @Test
     public void assertCommandForOsramPar1650ForColorTemperatureChannelOn() {
@@ -385,6 +381,7 @@ public class HueLightHandlerTest {
         assertSendCommand(channel, command, currentState, expectedReply, "LCT001", "Philips");
     }
 
+    @SuppressWarnings("null")
     private void assertSendCommand(String channel, Command command, HueLightState currentState, String expectedReply,
             String expectedModel, String expectedVendor) {
         FullLight light = gson.fromJson(currentState.toString(), FullConfig.class).getLights().get(0);
@@ -400,15 +397,14 @@ public class HueLightHandlerTest {
 
         long fadeTime = 400;
 
-        HueLightHandler hueLightHandler = new HueLightHandler(mockThing,
-                new HueStateDescriptionOptionProvider(mock(ChannelTypeI18nLocalizationService.class))) {
+        HueLightHandler hueLightHandler = new HueLightHandler(mockThing, mock(HueStateDescriptionProvider.class)) {
             @Override
-            protected synchronized HueClient getHueClient() {
+            protected synchronized @Nullable HueClient getHueClient() {
                 return mockClient;
             }
 
             @Override
-            protected Bridge getBridge() {
+            protected @Nullable Bridge getBridge() {
                 return mockBridge;
             }
         };

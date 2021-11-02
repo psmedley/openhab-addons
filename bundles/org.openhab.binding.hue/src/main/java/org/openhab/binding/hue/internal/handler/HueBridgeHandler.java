@@ -97,7 +97,7 @@ public class HueBridgeHandler extends ConfigStatusBridgeHandler implements HueCl
     private static final long SCENE_POLLING_INTERVAL = TimeUnit.SECONDS.convert(10, TimeUnit.MINUTES);
 
     private final Logger logger = LoggerFactory.getLogger(HueBridgeHandler.class);
-    private final HueStateDescriptionOptionProvider stateDescriptionOptionProvider;
+    private final HueStateDescriptionProvider stateDescriptionOptionProvider;
 
     private final Map<String, FullLight> lastLightStates = new ConcurrentHashMap<>();
     private final Map<String, FullSensor> lastSensorStates = new ConcurrentHashMap<>();
@@ -403,7 +403,7 @@ public class HueBridgeHandler extends ConfigStatusBridgeHandler implements HueCl
 
     private List<String> consoleScenesList = new ArrayList<>();
 
-    public HueBridgeHandler(Bridge bridge, HueStateDescriptionOptionProvider stateDescriptionOptionProvider) {
+    public HueBridgeHandler(Bridge bridge, HueStateDescriptionProvider stateDescriptionOptionProvider) {
         super(bridge);
         this.stateDescriptionOptionProvider = stateDescriptionOptionProvider;
     }
@@ -684,6 +684,8 @@ public class HueBridgeHandler extends ConfigStatusBridgeHandler implements HueCl
             if (hueBridge == null) {
                 hueBridge = new HueBridge(ip, hueBridgeConfig.getPort(), hueBridgeConfig.getProtocol(), scheduler);
                 hueBridge.setTimeout(5000);
+
+                updateStatus(ThingStatus.UNKNOWN);
 
                 // Try a first connection that will fail, then try to authenticate,
                 // and finally change the bridge status to ONLINE

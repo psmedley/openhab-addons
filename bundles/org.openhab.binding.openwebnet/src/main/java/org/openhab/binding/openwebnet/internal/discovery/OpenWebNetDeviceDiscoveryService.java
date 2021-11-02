@@ -18,8 +18,8 @@ import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.openwebnet.OpenWebNetBindingConstants;
-import org.openhab.binding.openwebnet.handler.OpenWebNetBridgeHandler;
+import org.openhab.binding.openwebnet.internal.OpenWebNetBindingConstants;
+import org.openhab.binding.openwebnet.internal.handler.OpenWebNetBridgeHandler;
 import org.openhab.core.config.discovery.AbstractDiscoveryService;
 import org.openhab.core.config.discovery.DiscoveryResult;
 import org.openhab.core.config.discovery.DiscoveryResultBuilder;
@@ -41,7 +41,8 @@ import org.slf4j.LoggerFactory;
  * bridge/gateway
  *
  * @author Massimo Valla - Initial contribution
- * @author Andrea Conte - Energy management
+ * @author Andrea Conte - Energy management, Thermoregulation
+ * @author Gilberto Cocchi - Thermoregulation
  */
 @NonNullByDefault
 public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
@@ -130,14 +131,40 @@ public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
                 deviceWho = Who.AUTOMATION;
                 break;
             }
-
+            case SCS_THERMO_SENSOR: {
+                thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_THERMO_SENSOR;
+                thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_THERMO_SENSOR;
+                deviceWho = Who.THERMOREGULATION;
+                break;
+            }
+            case SCS_THERMO_ZONE: {
+                thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_THERMO_ZONE;
+                thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_THERMO_ZONE;
+                deviceWho = Who.THERMOREGULATION;
+                break;
+            }
+            case SCS_THERMO_CENTRAL_UNIT: {
+                logger.warn("newDiscoveryResult() deviceType={} is not supported yet (WHERE={})", deviceType, where);
+                break;
+            }
             case SCS_ENERGY_METER: {
                 thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_ENERGY_METER;
                 thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_ENERGY_METER;
                 deviceWho = Who.ENERGY_MANAGEMENT;
                 break;
             }
-
+            case SCENARIO_CONTROL: {
+                thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_CEN_SCENARIO_CONTROL;
+                thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_CEN_SCENARIO_CONTROL;
+                deviceWho = Who.CEN_SCENARIO_SCHEDULER;
+                break;
+            }
+            case MULTIFUNCTION_SCENARIO_CONTROL: {
+                thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_CENPLUS_SCENARIO_CONTROL;
+                thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_CENPLUS_SCENARIO_CONTROL;
+                deviceWho = Who.CEN_PLUS_SCENARIO_SCHEDULER;
+                break;
+            }
             default:
                 logger.warn("Device type {} is not supported, default to GENERIC device (WHERE={})", deviceType, where);
                 if (where instanceof WhereZigBee) {
@@ -161,7 +188,7 @@ public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
 
         DiscoveryResult discoveryResult = null;
 
-        String whereConfig = where.value();
+        String whereConfig = bridgeHandler.normalizeWhere(where);
         if (where instanceof WhereZigBee && WhereZigBee.UNIT_02.equals(((WhereZigBee) where).getUnit())) {
             logger.debug("UNIT=02 found (WHERE={}) -> will remove previous result if exists", where);
             thingRemoved(thingUID); // remove previously discovered thing
