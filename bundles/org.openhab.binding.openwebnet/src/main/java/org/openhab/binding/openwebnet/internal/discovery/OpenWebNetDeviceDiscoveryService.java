@@ -159,6 +159,12 @@ public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
                 deviceWho = Who.CEN_SCENARIO_SCHEDULER;
                 break;
             }
+            case SCS_DRY_CONTACT_IR: {
+                thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_DRY_CONTACT_IR;
+                thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_DRY_CONTACT_IR;
+                deviceWho = Who.CEN_PLUS_SCENARIO_SCHEDULER;
+                break;
+            }
             case MULTIFUNCTION_SCENARIO_CONTROL: {
                 thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_CENPLUS_SCENARIO_CONTROL;
                 thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_CENPLUS_SCENARIO_CONTROL;
@@ -176,7 +182,7 @@ public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
         }
 
         String ownId = bridgeHandler.ownIdFromWhoWhere(deviceWho, where);
-        if (thingTypeUID == OpenWebNetBindingConstants.THING_TYPE_BUS_ON_OFF_SWITCH) {
+        if (OpenWebNetBindingConstants.THING_TYPE_BUS_ON_OFF_SWITCH.equals(thingTypeUID)) {
             if (bridgeHandler.getRegisteredDevice(ownId) != null) {
                 logger.debug("dimmer/switch with WHERE={} already registered, skipping this discovery result", where);
                 return;
@@ -188,7 +194,7 @@ public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
 
         DiscoveryResult discoveryResult = null;
 
-        String whereConfig = bridgeHandler.normalizeWhere(where);
+        String whereConfig = where.value();
         if (where instanceof WhereZigBee && WhereZigBee.UNIT_02.equals(((WhereZigBee) where).getUnit())) {
             logger.debug("UNIT=02 found (WHERE={}) -> will remove previous result if exists", where);
             thingRemoved(thingUID); // remove previously discovered thing
@@ -204,7 +210,7 @@ public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
         Map<String, Object> properties = new HashMap<>(2);
         properties.put(OpenWebNetBindingConstants.CONFIG_PROPERTY_WHERE, whereConfig);
         properties.put(OpenWebNetBindingConstants.PROPERTY_OWNID, ownId);
-        if (thingTypeUID == OpenWebNetBindingConstants.THING_TYPE_GENERIC_DEVICE) {
+        if (OpenWebNetBindingConstants.THING_TYPE_GENERIC_DEVICE.equals(thingTypeUID)) {
             thingLabel = thingLabel + " (WHO=" + deviceWho + ", WHERE=" + whereConfig + ")";
         } else {
             thingLabel = thingLabel + " (WHERE=" + whereConfig + ")";
