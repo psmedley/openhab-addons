@@ -359,6 +359,7 @@ public class IpCameraHandler extends BaseThingHandler {
         }
 
         @Override
+        @SuppressWarnings("PMD.CompareObjectsWithEquals")
         public void userEventTriggered(@Nullable ChannelHandlerContext ctx, @Nullable Object evt) throws Exception {
             if (ctx == null) {
                 return;
@@ -700,6 +701,7 @@ public class IpCameraHandler extends BaseThingHandler {
      * open large amounts of channels. This may help to keep it under control and WARN the user every 8 seconds this is
      * still occurring.
      */
+    @SuppressWarnings("PMD.CompareObjectsWithEquals")
     private void cleanChannels() {
         for (Channel channel : openChannels) {
             boolean oldChannel = true;
@@ -1364,7 +1366,7 @@ public class IpCameraHandler extends BaseThingHandler {
             snapshotIsFfmpeg();
         } else {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
-                    "Camera failed to report a valid Snaphot and/or RTSP URL. See readme on how to use the SNAPSHOT_URL_OVERRIDE feature.");
+                    "Camera failed to report a valid Snaphot and/or RTSP URL. Check user/pass is correct, or use the advanced configs to manually provide a URL.");
         }
     }
 
