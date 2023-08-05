@@ -100,15 +100,16 @@
 		<state readOnly="true"/>
 	</channel-type>
 	<channel-type id="percent-charged">
-		<item-type>Number:Dimensionless</item-type>
+		<item-type>Number</item-type>
 		<label>Powerwall Current Charge</label>
 		<description>Powerwall Current Charge</description>
-		<state readOnly="true"/>
+		<state pattern="%.1f %%" readOnly="true"></state>
 	</channel-type>
 	<channel-type id="battery-reserve">
-		<item-type>Number:Dimensionless</item-type>
+		<item-type>Number</item-type>
 		<label>Powerwall Current Reserve</label>
 		<description>How much of the battery capacity is reserved</description>
+		<state pattern="%.1f %%"></state>
 	</channel-type>
 	<channel-type id="site-name">
 		<item-type>String</item-type>
