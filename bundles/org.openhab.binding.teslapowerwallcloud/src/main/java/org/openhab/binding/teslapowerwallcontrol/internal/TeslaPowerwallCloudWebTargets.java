@@ -50,14 +50,19 @@ public class TeslaPowerwallCloudWebTargets {
 
     public String getSiteID(String accessToken) throws TeslaPowerwallCloudCommunicationException {
         String response = invoke("GET", "https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/products", accessToken);
+        logger.debug("Product List response = {}", response);
         JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
         JsonArray jsonResponse = jsonObject.getAsJsonArray("response");
         String siteID = "";
         int i = 0;
         while (siteID.isEmpty()) {
             jsonObject = jsonResponse.get(i).getAsJsonObject();
-            siteID = jsonObject.get("energy_site_id").getAsString();
+            if (jsonObject.has("energy_site_id")) {
+                siteID = jsonObject.get("energy_site_id").getAsString();
+            }
+            i++;
         }
+        logger.debug("Selected siteID is = {}", siteID);
         return siteID;
     }
 
