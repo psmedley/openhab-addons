@@ -29,4 +29,8 @@ public class TeslaPowerwallCloudConfiguration {
     public String refreshToken = "";
     public String siteID = "";
     public int refreshInterval = 60;
+    public String region = "";
+    public String clientID = "";
+    public String proxyHostname = "";
+    public int proxyPort = 4443;
 }

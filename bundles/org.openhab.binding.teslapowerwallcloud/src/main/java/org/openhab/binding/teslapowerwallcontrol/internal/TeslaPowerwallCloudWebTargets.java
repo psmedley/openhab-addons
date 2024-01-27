@@ -43,13 +43,13 @@ public class TeslaPowerwallCloudWebTargets {
     private final Logger logger = LoggerFactory.getLogger(TeslaPowerwallCloudWebTargets.class);
 
     public TeslaPowerwallCloudWebTargets(String accessToken, String siteID) {
-        String baseUri = "https://owner-api.teslamotors.com/api/1/energy_sites/" + siteID;
+        String baseUri = "https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/energy_sites/" + siteID;
         getLiveStatusUri = baseUri + "/live_status";
         getSiteInfoUri = baseUri + "/site_info";
     }
 
     public String getSiteID(String accessToken) throws TeslaPowerwallCloudCommunicationException {
-        String response = invoke("GET", "https://owner-api.teslamotors.com/api/1/products", accessToken);
+        String response = invoke("GET", "https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/products", accessToken);
         JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
         JsonArray jsonResponse = jsonObject.getAsJsonArray("response");
         String siteID = "";
@@ -64,8 +64,8 @@ public class TeslaPowerwallCloudWebTargets {
     public String generateAccessToken(String refreshToken) {
         String accessToken = "";
         String response;
-        String payload = "{\"grant_type\":\"refresh_token\",\"client_id\":\"ownerapi\",\"refresh_token\":\""
-                + refreshToken + "\",\"scope\":\"openid email offline_access\"}";
+        String payload = "{\"grant_type\":\"refresh_token\",\"client_id\":\"974e76bd8fad-4ac9-b1f9-8227e2db73b6\",\"refresh_token\":\""
+                + refreshToken + "\"}";
         Properties httpHeaders = new Properties();
         httpHeaders.put("Content-Type", "application/json");
         logger.debug("payload = {}", payload);
@@ -91,15 +91,16 @@ public class TeslaPowerwallCloudWebTargets {
     }
 
     public SiteInfo getSiteInfo(String accessToken, String siteID) throws TeslaPowerwallCloudCommunicationException {
-        String response = invoke("GET", "https://owner-api.teslamotors.com/api/1/energy_sites/" + siteID + "/site_info",
-                accessToken);
+        String response = invoke("GET",
+                "https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/energy_sites/" + siteID + "/site_info", accessToken);
         return SiteInfo.parse(response);
     }
 
     public LiveStatus getLiveStatus(String accessToken, String siteID)
             throws TeslaPowerwallCloudCommunicationException {
         String response = invoke("GET",
-                "https://owner-api.teslamotors.com/api/1/energy_sites/" + siteID + "/live_status", accessToken);
+                "https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/energy_sites/" + siteID + "/live_status",
+                accessToken);
         return LiveStatus.parse(response);
     }
 
@@ -110,9 +111,8 @@ public class TeslaPowerwallCloudWebTargets {
 
         logger.debug("payload = {}", payload);
         ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
-        String response = invoke("POST",
-                "https://owner-api.teslamotors.com/api/1/energy_sites/" + siteID + "/operation", accessToken, input,
-                "application/json");
+        String response = invoke("POST", "https://smedley.id.au:4443/api/1/energy_sites/" + siteID + "/operation",
+                accessToken, input, "application/json");
         logger.debug("response to Operating Mode change = {}", response);
         return response;
     }
@@ -124,7 +124,7 @@ public class TeslaPowerwallCloudWebTargets {
 
         logger.debug("payload = {}", payload);
         ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
-        String response = invoke("POST", "https://owner-api.teslamotors.com/api/1/energy_sites/" + siteID + "/backup",
+        String response = invoke("POST", "https://smedley.id.au:4443/api/1/energy_sites/" + siteID + "/backup",
                 accessToken, input, "application/json");
         logger.debug("response to reserve change = {}", response);
         return response;
@@ -137,9 +137,8 @@ public class TeslaPowerwallCloudWebTargets {
 
         logger.debug("payload = {}", payload);
         ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
-        String response = invoke("POST",
-                "https://owner-api.teslamotors.com/api/1/energy_sites/" + siteID + "/storm_mode", accessToken, input,
-                "application/json");
+        String response = invoke("POST", "https://smedley.id.au:4443/api/1/energy_sites/" + siteID + "/storm_mode",
+                accessToken, input, "application/json");
         logger.debug("response to Storm Mode change = {}", response);
         return response;
     }

@@ -36,7 +36,7 @@
 		<config-description>
 			<parameter name="refreshToken" type="text" required="true">
 				<label>SSO Refresh Token</label>
-				<description>SSO Refresh Token from IOS or Android Apps</description>
+				<description>SSO Refresh Token from Tesla 3rd party app sign-in</description>
 			</parameter>
 			<parameter name="siteID" type="text" required="false">
 				<label>Powerwall Site ID</label>
@@ -46,6 +46,30 @@
 				<label>Refresh Interval</label>
 				<description>Interval the device is polled in sec.</description>
 				<default>60</default>
+				<advanced>true</advanced>
+			</parameter>
+			<parameter name="region" type="text">
+				<label>Region</label>
+				<description>Region for Tesla Server (EU, NA or CN).</description>
+				<default>NA</default>
+				<advanced>true</advanced>
+			</parameter>
+			<parameter name="clientID" type="text">
+				<label>Client ID</label>
+				<description>Client ID for the Tesla Developer Account being used.</description>
+				<default>974e76bd8fad-4ac9-b1f9-8227e2db73b6</default>
+				<advanced>true</advanced>
+			</parameter>
+			<parameter name="proxyHostname" type="text">
+				<label>Proxy Hostname</label>
+				<description>Hostname for the server running tesla-http-proxy.</description>
+				<default>smedley.id.au</default>
+				<advanced>true</advanced>
+			</parameter>
+			<parameter name="proxyPort" type="integer">
+				<label>Port Number</label>
+				<description>Port number for the server running tesla-http-proxy.</description>
+				<default>4443</default>
 				<advanced>true</advanced>
 			</parameter>
 		</config-description>
