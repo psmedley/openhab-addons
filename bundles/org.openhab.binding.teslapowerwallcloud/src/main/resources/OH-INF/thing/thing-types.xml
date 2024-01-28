@@ -48,12 +48,6 @@
 				<default>60</default>
 				<advanced>true</advanced>
 			</parameter>
-			<parameter name="region" type="text">
-				<label>Region</label>
-				<description>Region for Tesla Server (EU, NA or CN).</description>
-				<default>NA</default>
-				<advanced>true</advanced>
-			</parameter>
 			<parameter name="clientID" type="text">
 				<label>Client ID</label>
 				<description>Client ID for the Tesla Developer Account being used.</description>
