@@ -77,6 +77,9 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
     private final WebTarget teslaTarget;
     WebTarget vehiclesTarget; // this cannot be marked final as it is used in the runnable
     final WebTarget vehicleTarget;
+    private final WebTarget teslaCMDTarget;
+    WebTarget vehiclesCMDTarget; // this cannot be marked final as it is used in the runnable
+    final WebTarget vehicleCMDTarget;
     final WebTarget dataRequestTarget;
     final WebTarget commandTarget;
     final WebTarget wakeUpTarget;
@@ -103,15 +106,19 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
             ThingTypeMigrationService thingTypeMigrationService) {
         super(bridge);
         this.teslaTarget = teslaClient.target(URI_OWNERS);
+        this.teslaCMDTarget = teslaClient.target(URI_COMMAND);
         this.ssoHandler = new TeslaSSOHandler(httpClientFactory.getCommonHttpClient());
         this.thingTypeMigrationService = thingTypeMigrationService;
 
         this.vehiclesTarget = teslaTarget.path(API_VERSION).path(VEHICLES);
+        this.vehiclesCMDTarget = teslaCMDTarget.path(API_VERSION).path(VEHICLES);
         this.vehicleTarget = vehiclesTarget.path(PATH_VEHICLE_ID);
+        this.vehicleCMDTarget = vehiclesCMDTarget.path(PATH_VEHICLE_ID);
         this.dataRequestTarget = vehicleTarget.path(PATH_DATA_REQUEST).queryParam("endpoints",
                 "location_data;charge_state;climate_state;vehicle_state;gui_settings;vehicle_config");
-        this.commandTarget = vehicleTarget.path(PATH_COMMAND);
+        this.commandTarget = vehicleCMDTarget.path(PATH_COMMAND);
         this.wakeUpTarget = vehicleTarget.path(PATH_WAKE_UP);
+        // System.out.println(commandTarget.getUri().toString());
     }
 
     @Override
@@ -307,6 +314,7 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
     protected String invokeAndParse(String vehicleId, String command, String payLoad, WebTarget target,
             int noOfretries) {
         logger.debug("Invoking: {}", command);
+        // logger.debug("Target: {}", target.getUri());
 
         if (vehicleId != null) {
             Response response;

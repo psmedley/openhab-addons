@@ -33,7 +33,8 @@ public class TeslaBindingConstants {
     public static final String PATH_WAKE_UP = "wake_up";
     public static final String PATH_ACCESS_TOKEN = "oauth/token";
     public static final String URI_EVENT = "wss://streaming.vn.teslamotors.com/streaming/";
-    public static final String URI_OWNERS = "https://owner-api.teslamotors.com";
+    public static final String URI_OWNERS = "https://fleet-api.prd.na.vn.cloud.tesla.com";
+    public static final String URI_COMMAND = "https://smedley.id.au:4443";
     public static final String VALETPIN = "valetpin";
     public static final String VEHICLES = "vehicles";
     public static final String VIN = "vin";
@@ -44,7 +45,7 @@ public class TeslaBindingConstants {
     public static final String PATH_AUTHORIZE = "authorize";
     public static final String PATH_TOKEN = "token";
     public static final String URI_CALLBACK = "https://auth.tesla.com/void/callback";
-    public static final String CLIENT_ID = "ownerapi";
+    public static final String CLIENT_ID = "974e76bd8fad-4ac9-b1f9-8227e2db73b6";
 
     // Tesla REST API commands
     public static final String COMMAND_ACTUATE_TRUNK = "actuate_trunk";
