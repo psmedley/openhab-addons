@@ -227,7 +227,7 @@ public class TeslaVehicleHandler extends BaseThingHandler {
      */
     public String getVehicleId() {
         if (vehicle != null) {
-            return vehicle.id;
+            return vehicle.vin;
         } else {
             return null;
         }
