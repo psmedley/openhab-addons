@@ -54,6 +54,7 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
     private long refreshInterval;
 
     private @Nullable String accessToken;
+    private @Nullable String proxyAddress;
     private @Nullable String refreshToken;
     private @Nullable String siteID;
 
@@ -74,7 +75,7 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
                     // TODO: handle data refresh
                 }
                 logger.debug("Setting operating mode to: {}", command);
-                webTargets.setOperatingMode(accessToken, siteID, command);
+                webTargets.setOperatingMode(accessToken, proxyAddress, siteID, command);
 
                 // Note: if communication with thing fails for some reason,
                 // indicate that by setting the status with detail information:
@@ -86,7 +87,7 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
                     // TODO: handle data refresh
                 }
                 logger.debug("Setting reserve to: {}", command);
-                webTargets.setReserve(accessToken, siteID, command);
+                webTargets.setReserve(accessToken, proxyAddress, siteID, command);
 
                 // Note: if communication with thing fails for some reason,
                 // indicate that by setting the status with detail information:
@@ -100,9 +101,9 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
                 if (command instanceof OnOffType) {
                     logger.debug("Setting storm mode to: {}", command);
                     if (command == OnOffType.ON) {
-                        webTargets.setStormMode(accessToken, siteID, "true");
+                        webTargets.setStormMode(accessToken, proxyAddress, siteID, "true");
                     } else {
-                        webTargets.setStormMode(accessToken, siteID, "false");
+                        webTargets.setStormMode(accessToken, proxyAddress, siteID, "false");
                     }
                 }
                 // Note: if communication with thing fails for some reason,
@@ -124,12 +125,13 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
         } else {
             // Need to convert config.refreshToken to an accessToken
             webTargets = new TeslaPowerwallCloudWebTargets(accessToken, config.siteID);
-            accessToken = webTargets.generateAccessToken(config.refreshToken);
+            accessToken = webTargets.generateAccessToken(config.refreshToken, config.clientID);
             tokenExpiry = java.time.Instant.now().getEpochSecond() + 27000;
             logger.debug("accessToken will expire at {}", tokenExpiry);
             refreshInterval = config.refreshInterval;
-            siteID = config.siteID;
+            proxyAddress = config.proxyAddress;
             refreshToken = config.refreshToken;
+            siteID = config.siteID;
             schedulePoll();
         }
     }
@@ -172,7 +174,7 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
     private void pollStatus() throws IOException {
         if (java.time.Instant.now().getEpochSecond() >= tokenExpiry) {
             logger.debug("accessToken will expire at {},  which is in < 30 min, renewing", tokenExpiry);
-            accessToken = webTargets.generateAccessToken(refreshToken);
+            accessToken = webTargets.generateAccessToken(refreshToken, config.clientID);
             tokenExpiry = java.time.Instant.now().getEpochSecond() + 27000;
         }
 

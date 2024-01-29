@@ -54,16 +54,10 @@
 				<default>974e76bd8fad-4ac9-b1f9-8227e2db73b6</default>
 				<advanced>true</advanced>
 			</parameter>
-			<parameter name="proxyHostname" type="text">
-				<label>Proxy Hostname</label>
-				<description>Hostname for the server running tesla-http-proxy.</description>
-				<default>smedley.id.au</default>
-				<advanced>true</advanced>
-			</parameter>
-			<parameter name="proxyPort" type="integer">
-				<label>Port Number</label>
-				<description>Port number for the server running tesla-http-proxy.</description>
-				<default>4443</default>
+			<parameter name="proxyAddress" type="text">
+				<label>Proxy Address</label>
+				<description>Hostname for the server running tesla-http-proxy. If a port is required, use https://localhost:4443</description>
+				<default>https://smedley.id.au:4443</default>
 				<advanced>true</advanced>
 			</parameter>
 		</config-description>

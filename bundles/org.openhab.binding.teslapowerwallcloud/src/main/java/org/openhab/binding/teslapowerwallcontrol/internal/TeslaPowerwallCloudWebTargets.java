@@ -66,10 +66,10 @@ public class TeslaPowerwallCloudWebTargets {
         return siteID;
     }
 
-    public String generateAccessToken(String refreshToken) {
+    public String generateAccessToken(String refreshToken, String client_id) {
         String accessToken = "";
         String response;
-        String payload = "{\"grant_type\":\"refresh_token\",\"client_id\":\"974e76bd8fad-4ac9-b1f9-8227e2db73b6\",\"refresh_token\":\""
+        String payload = "{\"grant_type\":\"refresh_token\",\"client_id\":\"" + client_id + "\",\"refresh_token\":\""
                 + refreshToken + "\"}";
         Properties httpHeaders = new Properties();
         httpHeaders.put("Content-Type", "application/json");
@@ -109,41 +109,41 @@ public class TeslaPowerwallCloudWebTargets {
         return LiveStatus.parse(response);
     }
 
-    public String setOperatingMode(String accessToken, String siteID, Command newMode)
+    public String setOperatingMode(String accessToken, String proxyAddress, String siteID, Command newMode)
             throws TeslaPowerwallCloudCommunicationException {
 
         String payload = "{\"default_real_mode\":\"" + newMode + "\"}";
 
         logger.debug("payload = {}", payload);
         ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
-        String response = invoke("POST", "https://smedley.id.au:4443/api/1/energy_sites/" + siteID + "/operation",
-                accessToken, input, "application/json");
+        String response = invoke("POST", proxyAddress + "/api/1/energy_sites/" + siteID + "/operation", accessToken,
+                input, "application/json");
         logger.debug("response to Operating Mode change = {}", response);
         return response;
     }
 
-    public String setReserve(String accessToken, String siteID, Command newReserve)
+    public String setReserve(String accessToken, String proxyAddress, String siteID, Command newReserve)
             throws TeslaPowerwallCloudCommunicationException {
 
         String payload = "{\"backup_reserve_percent\":" + newReserve + "}";
 
         logger.debug("payload = {}", payload);
         ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
-        String response = invoke("POST", "https://smedley.id.au:4443/api/1/energy_sites/" + siteID + "/backup",
-                accessToken, input, "application/json");
+        String response = invoke("POST", proxyAddress + "/api/1/energy_sites/" + siteID + "/backup", accessToken, input,
+                "application/json");
         logger.debug("response to reserve change = {}", response);
         return response;
     }
 
-    public String setStormMode(String accessToken, String siteID, String newStormMode)
+    public String setStormMode(String accessToken, String proxyAddress, String siteID, String newStormMode)
             throws TeslaPowerwallCloudCommunicationException {
 
         String payload = "{\"enabled\":" + newStormMode + "}";
 
         logger.debug("payload = {}", payload);
         ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
-        String response = invoke("POST", "https://smedley.id.au:4443/api/1/energy_sites/" + siteID + "/storm_mode",
-                accessToken, input, "application/json");
+        String response = invoke("POST", proxyAddress + "/api/1/energy_sites/" + siteID + "/storm_mode", accessToken,
+                input, "application/json");
         logger.debug("response to Storm Mode change = {}", response);
         return response;
     }
