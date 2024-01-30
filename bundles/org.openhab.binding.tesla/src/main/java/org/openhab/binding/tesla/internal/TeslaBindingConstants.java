@@ -34,6 +34,7 @@ public class TeslaBindingConstants {
     public static final String PATH_ACCESS_TOKEN = "oauth/token";
     public static final String URI_EVENT = "wss://streaming.vn.teslamotors.com/streaming/";
     public static final String URI_OWNERS = "https://fleet-api.prd.na.vn.cloud.tesla.com";
+    public static final String URI_COMMAND = "https://smedley.id.au:4443";
     public static final String VALETPIN = "valetpin";
     public static final String VEHICLES = "vehicles";
     public static final String VIN = "vin";
@@ -111,6 +112,4 @@ public class TeslaBindingConstants {
     public static final String CONFIG_INACTIVITY = "inactivity";
     public static final String CONFIG_USEDRIVESTATE = "useDriveState";
     public static final String CONFIG_USEDADVANCEDSTATES = "useAdvancedStatesForPolling";
-    public static final String CONFIG_CLIENTID = "clientID";
-    public static final String CONFIG_PROXYADDRESS = "proxyAddress";
 }
