@@ -106,7 +106,7 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
             ThingTypeMigrationService thingTypeMigrationService) {
         super(bridge);
         this.teslaTarget = teslaClient.target(URI_OWNERS);
-        this.teslaCMDTarget = teslaClient.target(URI_COMMAND);
+        this.teslaCMDTarget = teslaClient.target((String) getConfig().get(CONFIG_PROXYADDRESS));
         this.ssoHandler = new TeslaSSOHandler(httpClientFactory.getCommonHttpClient());
         this.thingTypeMigrationService = thingTypeMigrationService;
 
@@ -295,13 +295,14 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
 
         if (hasExpired) {
             String refreshToken = (String) getConfig().get(CONFIG_REFRESHTOKEN);
+            String clientID = (String) getConfig().get(CONFIG_CLIENTID);
 
             if (refreshToken == null || refreshToken.isEmpty()) {
                 return new ThingStatusInfo(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                         "No refresh token is provided.");
             }
 
-            this.logonToken = ssoHandler.getAccessToken(refreshToken);
+            this.logonToken = ssoHandler.getAccessToken(refreshToken, clientID);
             if (this.logonToken == null) {
                 return new ThingStatusInfo(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                         "Failed to obtain access token for API.");

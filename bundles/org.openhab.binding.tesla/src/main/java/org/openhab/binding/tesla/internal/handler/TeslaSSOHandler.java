@@ -54,11 +54,11 @@ public class TeslaSSOHandler {
     }
 
     @Nullable
-    public TokenResponse getAccessToken(String refreshToken) {
+    public TokenResponse getAccessToken(String refreshToken, String clientID) {
         logger.debug("Exchanging SSO refresh token for API access token");
 
         // get a new access token for the owner API token endpoint
-        RefreshTokenRequest refreshRequest = new RefreshTokenRequest(refreshToken);
+        RefreshTokenRequest refreshRequest = new RefreshTokenRequest(refreshToken, clientID);
         String refreshTokenPayload = gson.toJson(refreshRequest);
 
         final org.eclipse.jetty.client.api.Request request = httpClient.newRequest(URI_SSO + "/" + PATH_TOKEN);
