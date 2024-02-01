@@ -301,7 +301,14 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
                         "No refresh token is provided.");
             }
 
-            this.logonToken = ssoHandler.getAccessToken(refreshToken);
+            String clientID = (String) getConfig().get(CONFIG_CLIENTID);
+
+            if (clientID == null || clientID.isEmpty()) {
+                return new ThingStatusInfo(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
+                        "No Client ID is provided.");
+            }
+
+            this.logonToken = ssoHandler.getAccessToken(refreshToken, clientID);
             if (this.logonToken == null) {
                 return new ThingStatusInfo(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                         "Failed to obtain access token for API.");
@@ -314,19 +321,20 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
     protected String invokeAndParse(String vehicleId, String command, String payLoad, WebTarget target,
             int noOfretries) {
         logger.debug("Invoking: {}", command);
-        // logger.debug("Target: {}", target.getUri());
+        String proxyAddress = (String) getConfig().get(CONFIG_PROXYADDRESS);
 
         if (vehicleId != null) {
             Response response;
 
             if (payLoad != null) {
                 if (command != null) {
-                    response = target.resolveTemplate("cmd", command).resolveTemplate("vid", vehicleId).request()
+                    response = target.resolveTemplate("cmd", command).resolveTemplate("vid", vehicleId)
+                            .resolveTemplate("proxycmd", proxyAddress, false).request()
                             .header("Authorization", "Bearer " + logonToken.access_token)
                             .post(Entity.entity(payLoad, MediaType.APPLICATION_JSON_TYPE));
                 } else {
-                    response = target.resolveTemplate("vid", vehicleId).request()
-                            .header("Authorization", "Bearer " + logonToken.access_token)
+                    response = target.resolveTemplate("vid", vehicleId).resolveTemplate("proxycmd", proxyAddress, false)
+                            .request().header("Authorization", "Bearer " + logonToken.access_token)
                             .post(Entity.entity(payLoad, MediaType.APPLICATION_JSON_TYPE));
                 }
             } else if (command != null) {

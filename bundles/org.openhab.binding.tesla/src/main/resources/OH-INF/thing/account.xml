@@ -14,6 +14,18 @@
 				<description>Refresh token for account authentication. Please see the documentation on how to get hold of it.</description>
 				<context>password</context>
 			</parameter>
+			<parameter name="clientID" type="text">
+				<label>Client ID</label>
+				<description>Client ID for the Tesla Developer Account being used.</description>
+				<default>974e76bd8fad-4ac9-b1f9-8227e2db73b6</default>
+				<advanced>true</advanced>
+			</parameter>
+			<parameter name="proxyAddress" type="text">
+				<label>Proxy Address</label>
+				<description>URL for the server running tesla-http-proxy. If a port is required, use https://localhost:4443</description>
+				<default>https://smedley.id.au:4443</default>
+				<advanced>true</advanced>
+			</parameter>
 		</config-description>
 	</bridge-type>
 

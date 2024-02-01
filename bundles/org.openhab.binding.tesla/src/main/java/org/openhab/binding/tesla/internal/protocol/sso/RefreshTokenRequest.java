@@ -22,11 +22,12 @@ import static org.openhab.binding.tesla.internal.TeslaBindingConstants.*;
  */
 public class RefreshTokenRequest {
     public String grant_type = "refresh_token";
-    public String client_id = CLIENT_ID;
+    public String client_id;
     public String refresh_token;
     public String scope = SSO_SCOPES;
 
-    public RefreshTokenRequest(String refresh_token) {
+    public RefreshTokenRequest(String refresh_token, String clientID) {
         this.refresh_token = refresh_token;
+        this.client_id = clientID;
     }
 }
