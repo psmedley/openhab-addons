@@ -105,7 +105,7 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
     public TeslaAccountHandler(Bridge bridge, Client teslaClient, HttpClientFactory httpClientFactory,
             ThingTypeMigrationService thingTypeMigrationService) {
         super(bridge);
-        this.teslaTarget = teslaClient.target(URI_OWNERS);
+        this.teslaTarget = teslaClient.target(URI_FLEETAPI);
         this.teslaCMDTarget = teslaClient.target(URI_COMMAND);
         this.ssoHandler = new TeslaSSOHandler(httpClientFactory.getCommonHttpClient());
         this.thingTypeMigrationService = thingTypeMigrationService;
@@ -118,7 +118,6 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
                 "location_data;charge_state;climate_state;vehicle_state;gui_settings;vehicle_config");
         this.commandTarget = vehicleCMDTarget.path(PATH_COMMAND);
         this.wakeUpTarget = vehicleTarget.path(PATH_WAKE_UP);
-        // System.out.println(commandTarget.getUri().toString());
     }
 
     @Override
@@ -339,7 +338,7 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
                 }
             } else if (command != null) {
                 response = target.resolveTemplate("cmd", command).resolveTemplate("vid", vehicleId)
-                        .request(MediaType.APPLICATION_JSON_TYPE)
+                        .resolveTemplate("proxycmd", proxyAddress, false).request(MediaType.APPLICATION_JSON_TYPE)
                         .header("Authorization", "Bearer " + logonToken.access_token).get();
             } else {
                 response = target.resolveTemplate("vid", vehicleId).request(MediaType.APPLICATION_JSON_TYPE)
