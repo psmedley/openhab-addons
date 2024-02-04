@@ -34,7 +34,7 @@ public class TeslaBindingConstants {
     public static final String PATH_ACCESS_TOKEN = "oauth/token";
     public static final String URI_EVENT = "wss://streaming.vn.teslamotors.com/streaming/";
     public static final String URI_FLEETAPI = "https://fleet-api.prd.na.vn.cloud.tesla.com";
-    public static final String URI_REGION = "    https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/users/region";
+    public static final String URI_REGION = "https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/users/region";
     public static final String URI_COMMAND = "{proxycmd}";
     public static final String VALETPIN = "valetpin";
     public static final String VEHICLES = "vehicles";

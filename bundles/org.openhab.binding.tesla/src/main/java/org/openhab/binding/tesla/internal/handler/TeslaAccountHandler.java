@@ -77,6 +77,7 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
     private final WebTarget teslaTarget;
     WebTarget vehiclesTarget; // this cannot be marked final as it is used in the runnable
     final WebTarget vehicleTarget;
+    private final WebTarget teslaRegionTarget;
     private final WebTarget teslaCMDTarget;
     WebTarget vehiclesCMDTarget; // this cannot be marked final as it is used in the runnable
     final WebTarget vehicleCMDTarget;
@@ -101,12 +102,14 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
 
     private TokenResponse logonToken;
     private final Set<VehicleListener> vehicleListeners = new HashSet<>();
+    private String regionTarget;
 
     public TeslaAccountHandler(Bridge bridge, Client teslaClient, HttpClientFactory httpClientFactory,
             ThingTypeMigrationService thingTypeMigrationService) {
         super(bridge);
         this.teslaTarget = teslaClient.target(URI_FLEETAPI);
         this.teslaCMDTarget = teslaClient.target(URI_COMMAND);
+        this.teslaRegionTarget = teslaClient.target(URI_REGION);
         this.ssoHandler = new TeslaSSOHandler(httpClientFactory.getCommonHttpClient());
         this.thingTypeMigrationService = thingTypeMigrationService;
 
@@ -177,6 +180,17 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
         } else {
             return null;
         }
+    }
+
+    public String getRegion(String authHeader) {
+        Response response = teslaRegionTarget.request(MediaType.APPLICATION_JSON_TYPE)
+                .header("Authorization", authHeader).get();
+
+        logger.debug("Querying the vehicle region: Response: {}: {}", response.getStatus(),
+                response.getStatusInfo().getReasonPhrase());
+        JsonObject jsonObject = JsonParser.parseString(response.readEntity(String.class)).getAsJsonObject();
+        JsonObject jsonObject2 = jsonObject.get("response").getAsJsonObject();
+        return jsonObject2.get("fleet_api_base_url").toString();
     }
 
     public String getAccessToken() {
@@ -308,6 +322,12 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
             }
 
             this.logonToken = ssoHandler.getAccessToken(refreshToken, clientID);
+            if (this.regionTarget == null) {
+                String authHeader = getAuthHeader();
+                this.regionTarget = getRegion(authHeader);
+                logger.debug("this.regionTarget = {}", this.regionTarget);
+            }
+
             if (this.logonToken == null) {
                 return new ThingStatusInfo(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                         "Failed to obtain access token for API.");
