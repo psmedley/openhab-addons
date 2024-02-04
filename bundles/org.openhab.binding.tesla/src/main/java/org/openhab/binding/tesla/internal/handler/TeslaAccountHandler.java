@@ -102,7 +102,7 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
 
     private TokenResponse logonToken;
     private final Set<VehicleListener> vehicleListeners = new HashSet<>();
-    private String regionTarget;
+    public String regionTarget;
 
     public TeslaAccountHandler(Bridge bridge, Client teslaClient, HttpClientFactory httpClientFactory,
             ThingTypeMigrationService thingTypeMigrationService) {
@@ -190,7 +190,7 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
                 response.getStatusInfo().getReasonPhrase());
         JsonObject jsonObject = JsonParser.parseString(response.readEntity(String.class)).getAsJsonObject();
         JsonObject jsonObject2 = jsonObject.get("response").getAsJsonObject();
-        return jsonObject2.get("fleet_api_base_url").toString();
+        return jsonObject2.get("fleet_api_base_url").toString().replaceAll("\"", "");
     }
 
     public String getAccessToken() {
@@ -231,8 +231,8 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
 
         if (authHeader != null) {
             // get a list of vehicles
-            Response response = vehiclesTarget.request(MediaType.APPLICATION_JSON_TYPE)
-                    .header("Authorization", authHeader).get();
+            Response response = vehiclesTarget.resolveTemplate("fleetapi", this.regionTarget, false)
+                    .request(MediaType.APPLICATION_JSON_TYPE).header("Authorization", authHeader).get();
 
             logger.debug("Querying the vehicle: Response: {}: {}", response.getStatus(),
                     response.getStatusInfo().getReasonPhrase());
@@ -352,16 +352,18 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
                             .header("Authorization", "Bearer " + logonToken.access_token)
                             .post(Entity.entity(payLoad, MediaType.APPLICATION_JSON_TYPE));
                 } else {
-                    response = target.resolveTemplate("vid", vehicleId).resolveTemplate("proxycmd", proxyAddress, false)
-                            .request().header("Authorization", "Bearer " + logonToken.access_token)
+                    response = target.resolveTemplate("vid", vehicleId)
+                            .resolveTemplate("fleetapi", this.regionTarget, false).request()
+                            .header("Authorization", "Bearer " + logonToken.access_token)
                             .post(Entity.entity(payLoad, MediaType.APPLICATION_JSON_TYPE));
                 }
             } else if (command != null) {
                 response = target.resolveTemplate("cmd", command).resolveTemplate("vid", vehicleId)
-                        .resolveTemplate("proxycmd", proxyAddress, false).request(MediaType.APPLICATION_JSON_TYPE)
+                        .request(MediaType.APPLICATION_JSON_TYPE)
                         .header("Authorization", "Bearer " + logonToken.access_token).get();
             } else {
-                response = target.resolveTemplate("vid", vehicleId).request(MediaType.APPLICATION_JSON_TYPE)
+                response = target.resolveTemplate("vid", vehicleId)
+                        .resolveTemplate("fleetapi", this.regionTarget, false).request(MediaType.APPLICATION_JSON_TYPE)
                         .header("Authorization", "Bearer " + logonToken.access_token).get();
             }
 
@@ -409,7 +411,8 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
 
                 if (authenticationResult.getStatus() == ThingStatus.ONLINE) {
                     // get a list of vehicles
-                    Response response = vehiclesTarget.request(MediaType.APPLICATION_JSON_TYPE)
+                    Response response = vehiclesTarget.resolveTemplate("fleetapi", this.regionTarget, false)
+                            .request(MediaType.APPLICATION_JSON_TYPE)
                             .header("Authorization", "Bearer " + logonToken.access_token).get();
 
                     if (response != null && response.getStatus() == 200 && response.hasEntity()) {

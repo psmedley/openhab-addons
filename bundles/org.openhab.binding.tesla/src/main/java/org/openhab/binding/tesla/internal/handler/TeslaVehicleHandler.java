@@ -493,7 +493,8 @@ public class TeslaVehicleHandler extends BaseThingHandler {
     public void requestData(String command, String payLoad) {
         if (COMMAND_WAKE_UP.equals(command) || isAwake()
                 || (!"vehicleData".equals(command) && allowWakeUpForCommands)) {
-            Request request = account.newRequest(this, command, payLoad, account.dataRequestTarget, false);
+            Request request = account.newRequest(this, command, payLoad,
+                    account.dataRequestTarget.resolveTemplate("fleetapi", account.regionTarget, false), false);
             if (stateThrottler != null) {
                 stateThrottler.submit(DATA_THROTTLE, request);
             }
@@ -792,8 +793,8 @@ public class TeslaVehicleHandler extends BaseThingHandler {
             try {
                 // get a list of vehicles
                 synchronized (account.vehiclesTarget) {
-                    Response response = account.vehiclesTarget.request(MediaType.APPLICATION_JSON_TYPE)
-                            .header("Authorization", authHeader).get();
+                    Response response = account.vehiclesTarget.resolveTemplate("fleetapi", account.regionTarget, false)
+                            .request(MediaType.APPLICATION_JSON_TYPE).header("Authorization", authHeader).get();
 
                     logger.debug("Querying the vehicle, response : {}, {}", response.getStatus(),
                             response.getStatusInfo().getReasonPhrase());
