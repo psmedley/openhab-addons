@@ -56,6 +56,7 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
     private @Nullable String accessToken;
     private @Nullable String proxyAddress;
     private @Nullable String refreshToken;
+    private @Nullable String clientID;
     private @Nullable String siteID;
 
     private long tokenExpiry;
@@ -132,6 +133,7 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
             proxyAddress = config.proxyAddress;
             refreshToken = config.refreshToken;
             siteID = config.siteID;
+            clientID = config.clientID;
             schedulePoll();
         }
     }
@@ -174,7 +176,7 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
     private void pollStatus() throws IOException {
         if (java.time.Instant.now().getEpochSecond() >= tokenExpiry) {
             logger.debug("accessToken will expire at {},  which is in < 30 min, renewing", tokenExpiry);
-            accessToken = webTargets.generateAccessToken(refreshToken, config.clientID);
+            accessToken = webTargets.generateAccessToken(refreshToken, clientID);
             tokenExpiry = java.time.Instant.now().getEpochSecond() + 27000;
         }
 
