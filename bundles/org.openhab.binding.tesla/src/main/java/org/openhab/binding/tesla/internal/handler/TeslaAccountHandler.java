@@ -37,6 +37,7 @@ import org.openhab.binding.tesla.internal.protocol.Vehicle;
 import org.openhab.binding.tesla.internal.protocol.VehicleConfig;
 import org.openhab.binding.tesla.internal.protocol.VehicleData;
 import org.openhab.binding.tesla.internal.protocol.sso.TokenResponse;
+import org.openhab.core.config.core.Configuration;
 import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
@@ -332,6 +333,9 @@ public class TeslaAccountHandler extends BaseBridgeHandler {
                 return new ThingStatusInfo(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                         "Failed to obtain access token for API.");
             }
+            Configuration configuration = editConfiguration();
+            configuration.put(CONFIG_REFRESHTOKEN, this.logonToken.refresh_token);
+            updateConfiguration(configuration);
         }
 
         return new ThingStatusInfo(ThingStatus.ONLINE, ThingStatusDetail.NONE, null);
