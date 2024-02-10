@@ -174,9 +174,10 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
     }
 
     private void pollStatus() throws IOException {
+        TeslaPowerwallCloudConfiguration config = getConfigAs(TeslaPowerwallCloudConfiguration.class);
         if (java.time.Instant.now().getEpochSecond() >= tokenExpiry) {
             logger.debug("accessToken will expire at {},  which is in < 30 min, renewing", tokenExpiry);
-            accessToken = webTargets.generateAccessToken(refreshToken, clientID);
+            accessToken = webTargets.generateAccessToken(config.refreshToken, config.clientID);
             tokenExpiry = java.time.Instant.now().getEpochSecond() + 27000;
         }
 
