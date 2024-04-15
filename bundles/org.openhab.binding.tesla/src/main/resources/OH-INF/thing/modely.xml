@@ -122,6 +122,10 @@
 			<channel id="state" typeId="state"/>
 			<channel id="combinedtemp" typeId="combinedtemp"/>
 			<channel id="timetofullcharge" typeId="timetofullcharge"/>
+			<channel id="tpms_pressure_fl" typeId="tpms_pressure_fl"/>
+			<channel id="tpms_pressure_fr" typeId="tpms_pressure_fr"/>
+			<channel id="tpms_pressure_rl" typeId="tpms_pressure_rl"/>
+			<channel id="tpms_pressure_rr" typeId="tpms_pressure_rr"/>
 			<channel id="tripcharging" typeId="tripcharging"/>
 			<channel id="usablebatterylevel" typeId="usablebatterylevel"/>
 			<channel id="userchargeenablerequest" typeId="userchargeenablerequest"/>

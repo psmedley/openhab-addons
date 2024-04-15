@@ -33,6 +33,21 @@
 				<type>tesla:softwareupdateversion</type>
 			</add-channel>
 		</instruction-set>
+
+		<instruction-set targetVersion="3">
+			<add-channel id="tpms_pressure_fl" typeId="tpms_pressure_fl">
+				<type>tesla:tpms_pressure_fl</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_fr" typeId="tpms_pressure_fr">
+				<type>tesla:tpms_pressure_fr</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_rl" typeId="tpms_pressure_rl">
+				<type>tesla:tpms_pressure_rl</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_rr" typeId="tpms_pressure_rr">
+				<type>tesla:tpms_pressure_rr</type>
+			</add-channel>
+		</instruction-set>
 	</thing-type>
 
 	<thing-type uid="tesla:models">
@@ -63,6 +78,21 @@
 			</add-channel>
 			<add-channel id="softwareupdateversion" typeId="softwareupdateversion">
 				<type>tesla:softwareupdateversion</type>
+			</add-channel>
+		</instruction-set>
+
+		<instruction-set targetVersion="3">
+			<add-channel id="tpms_pressure_fl" typeId="tpms_pressure_fl">
+				<type>tesla:tpms_pressure_fl</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_fr" typeId="tpms_pressure_fr">
+				<type>tesla:tpms_pressure_fr</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_rl" typeId="tpms_pressure_rl">
+				<type>tesla:tpms_pressure_rl</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_rr" typeId="tpms_pressure_rr">
+				<type>tesla:tpms_pressure_rr</type>
 			</add-channel>
 		</instruction-set>
 	</thing-type>
@@ -97,6 +127,21 @@
 				<type>tesla:softwareupdateversion</type>
 			</add-channel>
 		</instruction-set>
+
+		<instruction-set targetVersion="3">
+			<add-channel id="tpms_pressure_fl" typeId="tpms_pressure_fl">
+				<type>tesla:tpms_pressure_fl</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_fr" typeId="tpms_pressure_fr">
+				<type>tesla:tpms_pressure_fr</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_rl" typeId="tpms_pressure_rl">
+				<type>tesla:tpms_pressure_rl</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_rr" typeId="tpms_pressure_rr">
+				<type>tesla:tpms_pressure_rr</type>
+			</add-channel>
+		</instruction-set>
 	</thing-type>
 
 	<thing-type uid="tesla:modely">
@@ -127,6 +172,21 @@
 			</add-channel>
 			<add-channel id="softwareupdateversion" typeId="softwareupdateversion">
 				<type>tesla:softwareupdateversion</type>
+			</add-channel>
+		</instruction-set>
+
+		<instruction-set targetVersion="3">
+			<add-channel id="tpms_pressure_fl" typeId="tpms_pressure_fl">
+				<type>tesla:tpms_pressure_fl</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_fr" typeId="tpms_pressure_fr">
+				<type>tesla:tpms_pressure_fr</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_rl" typeId="tpms_pressure_rl">
+				<type>tesla:tpms_pressure_rl</type>
+			</add-channel>
+			<add-channel id="tpms_pressure_rr" typeId="tpms_pressure_rr">
+				<type>tesla:tpms_pressure_rr</type>
 			</add-channel>
 		</instruction-set>
 	</thing-type>

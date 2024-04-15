@@ -1003,6 +1003,38 @@ public class TeslaChannelSelectorProxy {
                 return super.getState(s);
             }
         },
+        TPMS_PRESSURE_FL("tpms_pressure_fl", "tpms_pressure_fl", DecimalType.class, false) {
+            @Override
+            public State getState(String s, TeslaChannelSelectorProxy proxy, Map<String, String> properties) {
+                State someState = super.getState(s);
+                BigDecimal value = ((DecimalType) someState).toBigDecimal();
+                return new QuantityType<>(value, Units.BAR);
+            }
+        },
+        TPMS_PRESSURE_FR("tpms_pressure_fr", "tpms_pressure_fr", DecimalType.class, false) {
+            @Override
+            public State getState(String s, TeslaChannelSelectorProxy proxy, Map<String, String> properties) {
+                State someState = super.getState(s);
+                BigDecimal value = ((DecimalType) someState).toBigDecimal();
+                return new QuantityType<>(value, Units.BAR);
+            }
+        },
+        TPMS_PRESSURE_RL("tpms_pressure_rl", "tpms_pressure_rl", DecimalType.class, false) {
+            @Override
+            public State getState(String s, TeslaChannelSelectorProxy proxy, Map<String, String> properties) {
+                State someState = super.getState(s);
+                BigDecimal value = ((DecimalType) someState).toBigDecimal();
+                return new QuantityType<>(value, Units.BAR);
+            }
+        },
+        TPMS_PRESSURE_RR("tpms_pressure_rr", "tpms_pressure_rr", DecimalType.class, false) {
+            @Override
+            public State getState(String s, TeslaChannelSelectorProxy proxy, Map<String, String> properties) {
+                State someState = super.getState(s);
+                BigDecimal value = ((DecimalType) someState).toBigDecimal();
+                return new QuantityType<>(value, Units.BAR);
+            }
+        },
         USABLE_BATTERY_LEVEL("usable_battery_level", "usablebatterylevel", DecimalType.class, false),
         USER_CHARGE_ENABLE_REQUEST("user_charge_enable_request", "userchargeenablerequest", StringType.class, false),
         VEHICLE_NAME("vehicle_name", "name", StringType.class, true) {

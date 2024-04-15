@@ -690,6 +690,30 @@
 		<description>Number of hours to fully charge the battery</description>
 		<state pattern="%.1f h" readOnly="true"></state>
 	</channel-type>
+	<channel-type id="tpms_pressure_fl" advanced="true">
+		<item-type>Number</item-type>
+		<label>Tyre Pressure Front Left</label>
+		<description>Current tyre pressure in Front Left</description>
+		<state pattern="%.1f %unit%" readOnly="true"></state>
+	</channel-type>
+	<channel-type id="tpms_pressure_fr" advanced="true">
+		<item-type>Number</item-type>
+		<label>Tyre Pressure Front Right</label>
+		<description>Current tyre pressure in Front Right</description>
+		<state pattern="%.1f %unit%" readOnly="true"></state>
+	</channel-type>
+	<channel-type id="tpms_pressure_rl" advanced="true">
+		<item-type>Number</item-type>
+		<label>Tyre Pressure Rear Left</label>
+		<description>Current tyre pressure in Rear Left</description>
+		<state pattern="%.1f %unit%" readOnly="true"></state>
+	</channel-type>
+	<channel-type id="tpms_pressure_rr" advanced="true">
+		<item-type>Number</item-type>
+		<label>Tyre Pressure Rear Right</label>
+		<description>Current tyre pressure in Rear Right</description>
+		<state pattern="%.1f %unit%" readOnly="true"></state>
+	</channel-type>
 	<channel-type id="tripcharging" advanced="true">
 		<item-type>Switch</item-type>
 		<label>Trip Charging</label>

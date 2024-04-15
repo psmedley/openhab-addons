@@ -34,6 +34,10 @@ public class VehicleState {
     public boolean valet_mode;
     public boolean valet_pin_needed;
     public float odometer;
+    public float tpms_pressure_fl;
+    public float tpms_pressure_fr;
+    public float tpms_pressure_rl;
+    public float tpms_pressure_rr;
     public int center_display_state;
     public int df;
     public int dr;
