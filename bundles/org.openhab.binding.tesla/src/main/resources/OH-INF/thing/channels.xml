@@ -4,6 +4,30 @@
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
+	<channel-type id="tpms_pressure_fl" advanced="true">
+		<item-type>Number:Pressure</item-type>
+		<label>Tyre Pressure Front Left</label>
+		<description>Current tyre pressure in Front Left</description>
+		<state pattern="%.1f %unit%" readOnly="true"/>
+	</channel-type>
+	<channel-type id="tpms_pressure_fr" advanced="true">
+		<item-type>Number:Pressure</item-type>
+		<label>Tyre Pressure Front Right</label>
+		<description>Current tyre pressure in Front Right</description>
+		<state pattern="%.1f %unit%" readOnly="true"/>
+	</channel-type>
+	<channel-type id="tpms_pressure_rl" advanced="true">
+		<item-type>Number:Pressure</item-type>
+		<label>Tyre Pressure Rear Left</label>
+		<description>Current tyre pressure in Rear Left</description>
+		<state pattern="%.1f %unit%" readOnly="true"/>
+	</channel-type>
+	<channel-type id="tpms_pressure_rr" advanced="true">
+		<item-type>Number:Pressure</item-type>
+		<label>Tyre Pressure Rear Right</label>
+		<description>Current tyre pressure in Rear Right</description>
+		<state pattern="%.1f %unit%" readOnly="true"/>
+	</channel-type>
 	<channel-type id="softwareupdateavailable">
 		<item-type>Switch</item-type>
 		<label>Update Available</label>
@@ -689,34 +713,6 @@
 		<label>Time To Full Charge</label>
 		<description>Number of hours to fully charge the battery</description>
 		<state pattern="%.1f h" readOnly="true"></state>
-	</channel-type>
-	<channel-type id="tpms_pressure_fl" advanced="true">
-		<item-type>Number:Pressure</item-type>
-		<label>Tyre Pressure Front Left</label>
-		<description>Current tyre pressure in Front Left</description>
-		<state pattern="%.1f %unit%" readOnly="true"></state>
-		<state readOnly="true"></state>
-	</channel-type>
-	<channel-type id="tpms_pressure_fr" advanced="true">
-		<item-type>Number:Pressure</item-type>
-		<label>Tyre Pressure Front Right</label>
-		<description>Current tyre pressure in Front Right</description>
-		<state pattern="%.1f %unit%" readOnly="true"></state>
-		<state readOnly="true"></state>
-	</channel-type>
-	<channel-type id="tpms_pressure_rl" advanced="true">
-		<item-type>Number:Pressure</item-type>
-		<label>Tyre Pressure Rear Left</label>
-		<description>Current tyre pressure in Rear Left</description>
-		<state pattern="%.1f %unit%" readOnly="true"></state>
-		<state readOnly="true"></state>
-	</channel-type>
-	<channel-type id="tpms_pressure_rr" advanced="true">
-		<item-type>Number:Pressure</item-type>
-		<label>Tyre Pressure Rear Right</label>
-		<description>Current tyre pressure in Rear Right</description>
-		<state pattern="%.1f %unit%" readOnly="true"></state>
-		<state readOnly="true"></state>
 	</channel-type>
 	<channel-type id="tripcharging" advanced="true">
 		<item-type>Switch</item-type>
