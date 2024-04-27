@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.teslapowerwallcloud.internal.api;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,14 +25,15 @@ import com.google.gson.JsonParser;
  * @author Paul Smedley - Initial Contribution
  *
  */
+@NonNullByDefault
 public class SiteInfo {
     private static Logger LOGGER = LoggerFactory.getLogger(SiteInfo.class);
 
     public int reserve;
-    public String default_real_mode;
-    public String site_name;
-    public String storm_mode_enabled;
-    public String version;
+    public String default_real_mode = "";
+    public String site_name = "";
+    public String storm_mode_enabled = "";
+    public String version = "";
 
     private SiteInfo() {
     }

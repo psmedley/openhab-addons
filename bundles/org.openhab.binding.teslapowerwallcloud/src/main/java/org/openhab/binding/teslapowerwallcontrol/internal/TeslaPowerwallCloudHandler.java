@@ -23,6 +23,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.teslapowerwallcloud.internal.api.LiveStatus;
 import org.openhab.binding.teslapowerwallcloud.internal.api.SiteInfo;
+import org.openhab.core.config.core.Configuration;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
@@ -126,12 +127,15 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
         } else {
             // Need to convert config.refreshToken to an accessToken
             webTargets = new TeslaPowerwallCloudWebTargets(accessToken, config.siteID);
-            accessToken = webTargets.generateAccessToken(config.refreshToken, config.clientID);
+            String[] strAccessTokenArray = webTargets.generateAccessToken(config.refreshToken, config.clientID);
+            accessToken = strAccessTokenArray[0];
             tokenExpiry = java.time.Instant.now().getEpochSecond() + 27000;
-            logger.debug("accessToken will expire at {}", tokenExpiry);
+            logger.debug("accessToken will expire at {}, new Refresh Token is {}", tokenExpiry, strAccessTokenArray[1]);
             refreshInterval = config.refreshInterval;
             proxyAddress = config.proxyAddress;
-            refreshToken = config.refreshToken;
+            Configuration configuration = editConfiguration();
+            configuration.put("refreshToken", strAccessTokenArray[1]);
+            updateConfiguration(configuration);
             siteID = config.siteID;
             clientID = config.clientID;
             schedulePoll();
@@ -177,7 +181,11 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
         TeslaPowerwallCloudConfiguration config = getConfigAs(TeslaPowerwallCloudConfiguration.class);
         if (java.time.Instant.now().getEpochSecond() >= tokenExpiry) {
             logger.debug("accessToken will expire at {},  which is in < 30 min, renewing", tokenExpiry);
-            accessToken = webTargets.generateAccessToken(config.refreshToken, config.clientID);
+            String[] strAccessTokenArray = webTargets.generateAccessToken(config.refreshToken, config.clientID);
+            accessToken = strAccessTokenArray[0];
+            Configuration configuration = editConfiguration();
+            configuration.put("refreshToken", strAccessTokenArray[1]);
+            updateConfiguration(configuration);
             tokenExpiry = java.time.Instant.now().getEpochSecond() + 27000;
         }
 

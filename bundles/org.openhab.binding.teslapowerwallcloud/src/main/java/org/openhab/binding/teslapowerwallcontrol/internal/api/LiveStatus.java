@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.teslapowerwallcloud.internal.api;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,7 @@ import com.google.gson.JsonParser;
  * @author Paul Smedley - Initial Contribution
  *
  */
+@NonNullByDefault
 public class LiveStatus {
     private static Logger LOGGER = LoggerFactory.getLogger(LiveStatus.class);
 
@@ -32,11 +34,11 @@ public class LiveStatus {
     public double load_power;
     public double grid_power;
     public float percentage_charged;
-    public String grid_status;
-    public String grid_services_active;
+    public String grid_status = "";
+    public String grid_services_active = "";
     public double grid_services_power;
-    public String island_status;
-    public String storm_mode_active;
+    public String island_status = "";
+    public String storm_mode_active = "";
 
     private LiveStatus() {
     }

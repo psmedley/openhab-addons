@@ -38,8 +38,8 @@ import com.google.gson.JsonParser;
 public class TeslaPowerwallCloudWebTargets {
     private static final int TIMEOUT_MS = 30000;
 
-    private String getLiveStatusUri;
-    private String getSiteInfoUri;
+    private String getLiveStatusUri = "";
+    private String getSiteInfoUri = "";
     private final Logger logger = LoggerFactory.getLogger(TeslaPowerwallCloudWebTargets.class);
 
     public TeslaPowerwallCloudWebTargets(String accessToken, String siteID) {
@@ -66,8 +66,9 @@ public class TeslaPowerwallCloudWebTargets {
         return siteID;
     }
 
-    public String generateAccessToken(String refreshToken, String client_id) {
+    public String[] generateAccessToken(String refreshToken, String client_id) {
         String accessToken = "";
+        String newRefreshToken = "";
         String response;
         String payload = "{\"grant_type\":\"refresh_token\",\"client_id\":\"" + client_id + "\",\"refresh_token\":\""
                 + refreshToken + "\"}";
@@ -89,10 +90,12 @@ public class TeslaPowerwallCloudWebTargets {
         if (!(response == null)) {
             JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
             accessToken = jsonObject.get("access_token").getAsString();
+            newRefreshToken = jsonObject.get("refresh_token").getAsString();
         }
         logger.debug("accessToken = {}", accessToken);
+        logger.debug("newRefreshToken = {}", newRefreshToken);
 
-        return accessToken;
+        return new String[] { accessToken, newRefreshToken };
     }
 
     public SiteInfo getSiteInfo(String accessToken, String siteID) throws TeslaPowerwallCloudCommunicationException {
