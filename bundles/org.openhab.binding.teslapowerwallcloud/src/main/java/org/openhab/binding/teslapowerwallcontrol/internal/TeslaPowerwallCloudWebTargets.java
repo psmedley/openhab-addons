@@ -19,6 +19,7 @@ import java.util.Properties;
 
 import org.openhab.binding.teslapowerwallcloud.internal.api.LiveStatus;
 import org.openhab.binding.teslapowerwallcloud.internal.api.SiteInfo;
+import org.openhab.binding.teslapowerwallcloud.internal.api.TokenResponse;
 import org.openhab.core.io.net.http.HttpUtil;
 import org.openhab.core.types.Command;
 import org.slf4j.Logger;
@@ -66,7 +67,7 @@ public class TeslaPowerwallCloudWebTargets {
         return siteID;
     }
 
-    public String[] generateAccessToken(String refreshToken, String client_id) {
+    public TokenResponse generateAccessToken(String refreshToken, String client_id) {
         String accessToken = "";
         String newRefreshToken = "";
         String response;
@@ -87,15 +88,7 @@ public class TeslaPowerwallCloudWebTargets {
         }
         logger.debug("response = {}", response);
 
-        if (!(response == null)) {
-            JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
-            accessToken = jsonObject.get("access_token").getAsString();
-            newRefreshToken = jsonObject.get("refresh_token").getAsString();
-        }
-        logger.debug("accessToken = {}", accessToken);
-        logger.debug("newRefreshToken = {}", newRefreshToken);
-
-        return new String[] { accessToken, newRefreshToken };
+        return TokenResponse.parse(response);
     }
 
     public SiteInfo getSiteInfo(String accessToken, String siteID) throws TeslaPowerwallCloudCommunicationException {

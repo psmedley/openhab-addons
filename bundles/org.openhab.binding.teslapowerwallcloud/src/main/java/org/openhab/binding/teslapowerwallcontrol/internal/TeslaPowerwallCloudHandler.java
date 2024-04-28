@@ -23,6 +23,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.teslapowerwallcloud.internal.api.LiveStatus;
 import org.openhab.binding.teslapowerwallcloud.internal.api.SiteInfo;
+import org.openhab.binding.teslapowerwallcloud.internal.api.TokenResponse;
 import org.openhab.core.config.core.Configuration;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
@@ -125,17 +126,9 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
         if (config.refreshToken == null) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "SSO Refresh Token must be set");
         } else {
-            // Need to convert config.refreshToken to an accessToken
             webTargets = new TeslaPowerwallCloudWebTargets(accessToken, config.siteID);
-            String[] strAccessTokenArray = webTargets.generateAccessToken(config.refreshToken, config.clientID);
-            accessToken = strAccessTokenArray[0];
-            tokenExpiry = java.time.Instant.now().getEpochSecond() + 27000;
-            logger.debug("accessToken will expire at {}, new Refresh Token is {}", tokenExpiry, strAccessTokenArray[1]);
             refreshInterval = config.refreshInterval;
             proxyAddress = config.proxyAddress;
-            Configuration configuration = editConfiguration();
-            configuration.put("refreshToken", strAccessTokenArray[1]);
-            updateConfiguration(configuration);
             siteID = config.siteID;
             clientID = config.clientID;
             schedulePoll();
@@ -181,12 +174,14 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
         TeslaPowerwallCloudConfiguration config = getConfigAs(TeslaPowerwallCloudConfiguration.class);
         if (java.time.Instant.now().getEpochSecond() >= tokenExpiry) {
             logger.debug("accessToken will expire at {},  which is in < 30 min, renewing", tokenExpiry);
-            String[] strAccessTokenArray = webTargets.generateAccessToken(config.refreshToken, config.clientID);
-            accessToken = strAccessTokenArray[0];
-            Configuration configuration = editConfiguration();
-            configuration.put("refreshToken", strAccessTokenArray[1]);
-            updateConfiguration(configuration);
-            tokenExpiry = java.time.Instant.now().getEpochSecond() + 27000;
+            TokenResponse tokenResponse = webTargets.generateAccessToken(config.refreshToken, config.clientID);
+            if (tokenResponse != null) {
+                accessToken = tokenResponse.access_token;
+                Configuration configuration = editConfiguration();
+                configuration.put("refreshToken", tokenResponse.refresh_token);
+                updateConfiguration(configuration);
+                tokenExpiry = java.time.Instant.now().getEpochSecond() + tokenResponse.expires_in - 1000;
+            }
         }
 
         if (siteID.isEmpty()) {
