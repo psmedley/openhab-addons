@@ -240,8 +240,6 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
                             OnOffType.OFF);
                     break;
             }
-            updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_GRID_SERVICES_POWER,
-                    new QuantityType<>(liveStatus.grid_services_power, MetricPrefix.KILO(Units.WATT)));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_ISLAND_STATUS,
                     new StringType(liveStatus.island_status));
             switch (liveStatus.storm_mode_active) {
