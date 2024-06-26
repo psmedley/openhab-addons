@@ -27,8 +27,6 @@
 			<channel id="battery-reserve" typeId="battery-reserve"/>
 			<channel id="site-name" typeId="site-name"/>
 			<channel id="version" typeId="version"/>
-			<channel id="grid-services-active" typeId="grid-services-active"/>
-			<channel id="grid-services-power" typeId="grid-services-power"/>
 			<channel id="island-status" typeId="island-status"/>
 			<channel id="storm-mode-active" typeId="storm-mode-active"/>
 		</channels>
@@ -133,18 +131,6 @@
 		<item-type>String</item-type>
 		<label>Firmware version</label>
 		<description>Powerwall2 current firmware version</description>
-		<state readOnly="true"/>
-	</channel-type>
-	<channel-type id="grid-services-active">
-		<item-type>Switch</item-type>
-		<label>Grid Services Status</label>
-		<description>Grid Services Status</description>
-		<state readOnly="true"/>
-	</channel-type>
-	<channel-type id="grid-services-power">
-		<item-type>Number:Power</item-type>
-		<label>Grid Services Power</label>
-		<description>Current power generated/consumed by Grid Services/VPP</description>
 		<state readOnly="true"/>
 	</channel-type>
 	<channel-type id="island-status">

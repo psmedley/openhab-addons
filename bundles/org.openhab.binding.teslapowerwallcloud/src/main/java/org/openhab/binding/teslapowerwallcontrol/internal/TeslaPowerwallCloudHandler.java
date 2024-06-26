@@ -230,16 +230,6 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
                     updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_GRID_STATUS, OnOffType.OFF);
                     break;
             }
-            switch (liveStatus.grid_services_active) {
-                case "true":
-                    updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_GRID_SERVICES_ACTIVE,
-                            OnOffType.ON);
-                    break;
-                case "false":
-                    updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_GRID_SERVICES_ACTIVE,
-                            OnOffType.OFF);
-                    break;
-            }
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_ISLAND_STATUS,
                     new StringType(liveStatus.island_status));
             switch (liveStatus.storm_mode_active) {

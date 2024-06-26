@@ -35,7 +35,6 @@ public class LiveStatus {
     public double grid_power;
     public float percentage_charged;
     public String grid_status = "";
-    public String grid_services_active = "";
     public String island_status = "";
     public String storm_mode_active = "";
 
@@ -54,7 +53,6 @@ public class LiveStatus {
         info.grid_power = jsonResponse.get("grid_power").getAsDouble() / 1000;
         info.percentage_charged = jsonResponse.get("percentage_charged").getAsFloat();
         info.grid_status = jsonResponse.get("grid_status").getAsString();
-        info.grid_services_active = jsonResponse.get("grid_services_active").getAsString();
         info.island_status = jsonResponse.get("island_status").getAsString();
         info.storm_mode_active = jsonResponse.get("storm_mode_active").getAsString();
         return info;
