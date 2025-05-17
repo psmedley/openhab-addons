@@ -13,11 +13,8 @@
 package org.openhab.binding.teslapowerwallcloud.internal.api;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Class for holding the set of parameters used to read the Site Info.
@@ -27,29 +24,18 @@ import com.google.gson.JsonParser;
  */
 @NonNullByDefault
 public class SiteInfo {
-    private static Logger LOGGER = LoggerFactory.getLogger(SiteInfo.class);
-
     public int reserve;
-    public String default_real_mode = "";
-    public String site_name = "";
-    public String storm_mode_enabled = "";
+    @SerializedName("default_real_mode")
+    public String defaultRealMode = "";
+
+    @SerializedName("site_name")
+    public String siteName = "";
+
+    @SerializedName("storm_mode_enabled")
+    public String stormModeEnabled = "";
+
     public String version = "";
 
     private SiteInfo() {
-    }
-
-    public static SiteInfo parse(String response) {
-        LOGGER.debug("Parsing string: \"{}\"", response);
-        /* parse json string */
-        JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
-        JsonObject jsonResponse = jsonObject.getAsJsonObject("response");
-        JsonObject jsonUserSettings = jsonResponse.getAsJsonObject("user_settings");
-        SiteInfo info = new SiteInfo();
-        info.reserve = jsonResponse.get("backup_reserve_percent").getAsInt();
-        info.default_real_mode = jsonResponse.get("default_real_mode").getAsString();
-        info.site_name = jsonResponse.get("site_name").getAsString();
-        info.storm_mode_enabled = jsonUserSettings.get("storm_mode_enabled").getAsString();
-        info.version = jsonResponse.get("version").getAsString();
-        return info;
     }
 }

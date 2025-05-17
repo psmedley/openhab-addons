@@ -12,11 +12,9 @@
  */
 package org.openhab.binding.teslapowerwallcloud.internal.api;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.eclipse.jdt.annotation.NonNullByDefault;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Class for holding the set of parameters used to read the Site Info.
@@ -25,26 +23,20 @@ import com.google.gson.JsonParser;
  *
  */
 
+@NonNullByDefault
 public class TokenResponse {
-    private static Logger LOGGER = LoggerFactory.getLogger(TokenResponse.class);
+    @SerializedName("access_token")
+    public String accessToken = "";
 
-    public String access_token = "";
-    public String token_type = "";
-    public Long expires_in;
-    public String refresh_token = "";
+    @SerializedName("token_type")
+    public String tokenType = "";
+
+    @SerializedName("expires_in")
+    public Long expiresIn = 0L;
+
+    @SerializedName("refresh_token")
+    public String refreshToken = "";
 
     private TokenResponse() {
-    }
-
-    public static TokenResponse parse(String response) {
-        LOGGER.debug("Parsing string: \"{}\"", response);
-        /* parse json string */
-        JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
-        TokenResponse tokenResponse = new TokenResponse();
-        tokenResponse.access_token = jsonObject.get("access_token").getAsString();
-        tokenResponse.token_type = jsonObject.get("token_type").getAsString();
-        tokenResponse.expires_in = jsonObject.get("expires_in").getAsLong();
-        tokenResponse.refresh_token = jsonObject.get("refresh_token").getAsString();
-        return tokenResponse;
     }
 }

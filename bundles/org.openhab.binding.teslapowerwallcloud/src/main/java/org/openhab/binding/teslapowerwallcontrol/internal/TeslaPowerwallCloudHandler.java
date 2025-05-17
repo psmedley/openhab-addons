@@ -36,7 +36,6 @@ import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.types.Command;
-import org.openhab.core.types.RefreshType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,10 +54,10 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
 
     private long refreshInterval;
 
-    private @Nullable String accessToken;
-    private @Nullable String refreshToken;
-    private @Nullable String clientID;
-    private @Nullable String siteID;
+    private String accessToken = "";
+    private String refreshToken = "";
+    private String clientID = "";
+    private String siteID = "";
 
     private long tokenExpiry;
 
@@ -73,9 +72,6 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
     public void handleCommand(ChannelUID channelUID, Command command) {
         try {
             if (CHANNEL_POWERWALLCLOUD_POWERWALL_MODE.equals(channelUID.getId())) {
-                if (command instanceof RefreshType) {
-                    // TODO: handle data refresh
-                }
                 logger.debug("Setting operating mode to: {}", command);
                 webTargets.setOperatingMode(accessToken, siteID, command);
 
@@ -85,9 +81,6 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
                 // "Could not control device at IP address x.x.x.x");
             }
             if (CHANNEL_POWERWALLCLOUD_BATTERY_RESERVE.equals(channelUID.getId())) {
-                if (command instanceof RefreshType) {
-                    // TODO: handle data refresh
-                }
                 logger.debug("Setting reserve to: {}", command);
                 webTargets.setReserve(accessToken, siteID, command);
 
@@ -97,9 +90,6 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
                 // "Could not control device at IP address x.x.x.x");
             }
             if (CHANNEL_POWERWALLCLOUD_STORM_MODE.equals(channelUID.getId())) {
-                if (command instanceof RefreshType) {
-                    // TODO: handle data refresh
-                }
                 if (command instanceof OnOffType) {
                     logger.debug("Setting storm mode to: {}", command);
                     if (command == OnOffType.ON) {
@@ -125,7 +115,7 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
         if (config.refreshToken == null) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "SSO Refresh Token must be set");
         } else {
-            webTargets = new TeslaPowerwallCloudWebTargets(accessToken, config.siteID);
+            webTargets = new TeslaPowerwallCloudWebTargets();
             refreshInterval = config.refreshInterval;
             siteID = config.siteID;
             clientID = config.clientID;
@@ -174,11 +164,11 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
             logger.debug("accessToken will expire at {},  which is in < 30 min, renewing", tokenExpiry);
             TokenResponse tokenResponse = webTargets.generateAccessToken(config.refreshToken, config.clientID);
             if (tokenResponse != null) {
-                accessToken = tokenResponse.access_token;
+                accessToken = tokenResponse.accessToken;
                 Configuration configuration = editConfiguration();
-                configuration.put("refreshToken", tokenResponse.refresh_token);
+                configuration.put("refreshToken", tokenResponse.refreshToken);
                 updateConfiguration(configuration);
-                tokenExpiry = java.time.Instant.now().getEpochSecond() + tokenResponse.expires_in - 1000;
+                tokenExpiry = java.time.Instant.now().getEpochSecond() + tokenResponse.expiresIn - 1000;
             }
         }
 
@@ -192,14 +182,14 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
 
         if (siteInfo != null) {
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_POWERWALL_MODE,
-                    new StringType(siteInfo.default_real_mode));
+                    new StringType(siteInfo.defaultRealMode));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_SITE_NAME,
-                    new StringType(siteInfo.site_name));
+                    new StringType(siteInfo.siteName));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_VERSION,
                     new StringType(siteInfo.version));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_BATTERY_RESERVE,
                     new QuantityType<>(siteInfo.reserve, Units.PERCENT));
-            switch (siteInfo.storm_mode_enabled) {
+            switch (siteInfo.stormModeEnabled) {
                 case "true":
                     updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_STORM_MODE, OnOffType.ON);
                     break;
@@ -211,16 +201,16 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
 
         if (liveStatus != null) {
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_SOLAR_POWER,
-                    new QuantityType<>(liveStatus.solar_power, MetricPrefix.KILO(Units.WATT)));
+                    new QuantityType<>(liveStatus.solarPower, MetricPrefix.KILO(Units.WATT)));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_HOME_POWER,
-                    new QuantityType<>(liveStatus.load_power, MetricPrefix.KILO(Units.WATT)));
+                    new QuantityType<>(liveStatus.loadPower, MetricPrefix.KILO(Units.WATT)));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_GRID_POWER,
-                    new QuantityType<>(liveStatus.grid_power, MetricPrefix.KILO(Units.WATT)));
+                    new QuantityType<>(liveStatus.gridPower, MetricPrefix.KILO(Units.WATT)));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_BATTERY_POWER,
-                    new QuantityType<>(liveStatus.battery_power, MetricPrefix.KILO(Units.WATT)));
+                    new QuantityType<>(liveStatus.batteryPower, MetricPrefix.KILO(Units.WATT)));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_PERCENT_CHARGED,
-                    new QuantityType<>(liveStatus.percentage_charged, Units.PERCENT));
-            switch (liveStatus.grid_status) {
+                    new QuantityType<>(liveStatus.percentageCharged, Units.PERCENT));
+            switch (liveStatus.gridStatus) {
                 case "Active":
                     updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_GRID_STATUS, OnOffType.ON);
                     break;
@@ -229,8 +219,8 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
                     break;
             }
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_ISLAND_STATUS,
-                    new StringType(liveStatus.island_status));
-            switch (liveStatus.storm_mode_active) {
+                    new StringType(liveStatus.islandStatus));
+            switch (liveStatus.stormModeActive) {
                 case "true":
                     updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_STORM_MODE_ACTIVE,
                             OnOffType.ON);
