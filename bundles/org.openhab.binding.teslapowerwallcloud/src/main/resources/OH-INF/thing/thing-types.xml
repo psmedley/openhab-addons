@@ -25,8 +25,6 @@
 			<channel id="grid-status" typeId="grid-status"/>
 			<channel id="percent-charged" typeId="percent-charged"/>
 			<channel id="battery-reserve" typeId="battery-reserve"/>
-			<channel id="site-name" typeId="site-name"/>
-			<channel id="version" typeId="version"/>
 			<channel id="island-status" typeId="island-status"/>
 			<channel id="storm-mode-active" typeId="storm-mode-active"/>
 		</channels>
