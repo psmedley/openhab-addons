@@ -42,8 +42,6 @@ public class TeslaPowerwallCloudBindingConstants {
     public static final String CHANNEL_POWERWALLCLOUD_GRID_STATUS = "grid-status";
     public static final String CHANNEL_POWERWALLCLOUD_PERCENT_CHARGED = "percent-charged";
     public static final String CHANNEL_POWERWALLCLOUD_BATTERY_RESERVE = "battery-reserve";
-    public static final String CHANNEL_POWERWALLCLOUD_SITE_NAME = "site-name";
-    public static final String CHANNEL_POWERWALLCLOUD_VERSION = "version";
     public static final String CHANNEL_POWERWALLCLOUD_ISLAND_STATUS = "island-status";
     public static final String CHANNEL_POWERWALLCLOUD_STORM_MODE_ACTIVE = "storm-mode-active";
 

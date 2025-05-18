@@ -115,18 +115,6 @@
 		<description>How much of the battery capacity is reserved</description>
 		<state pattern="%.1f %%"></state>
 	</channel-type>
-	<channel-type id="site-name">
-		<item-type>String</item-type>
-		<label>Installation Site Name</label>
-		<description>Name of the installation site</description>
-		<state readOnly="true"/>
-	</channel-type>
-	<channel-type id="version">
-		<item-type>String</item-type>
-		<label>Firmware version</label>
-		<description>Powerwall2 current firmware version</description>
-		<state readOnly="true"/>
-	</channel-type>
 	<channel-type id="island-status">
 		<item-type>String</item-type>
 		<label>Island Status</label>
