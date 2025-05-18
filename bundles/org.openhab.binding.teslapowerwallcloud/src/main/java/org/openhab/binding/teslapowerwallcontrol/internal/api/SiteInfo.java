@@ -24,17 +24,23 @@ import com.google.gson.annotations.SerializedName;
  */
 @NonNullByDefault
 public class SiteInfo {
-    public int reserve;
-    @SerializedName("default_real_mode")
-    public String defaultRealMode = "";
+    @SerializedName("response")
+    public @NonNullByDefault({}) SiteInfoResponse siteInfoResponse;
 
-    @SerializedName("site_name")
-    public String siteName = "";
+    public class SiteInfoResponse {
+        @SerializedName("backup_reserve_percent")
+        public int reserve;
+        @SerializedName("default_real_mode")
+        public String defaultRealMode = "";
 
-    @SerializedName("storm_mode_enabled")
-    public String stormModeEnabled = "";
+        @SerializedName("site_name")
+        public String siteName = "";
 
-    public String version = "";
+        @SerializedName("storm_mode_enabled")
+        public boolean stormModeEnabled;
+
+        public String version = "";
+    }
 
     private SiteInfo() {
     }

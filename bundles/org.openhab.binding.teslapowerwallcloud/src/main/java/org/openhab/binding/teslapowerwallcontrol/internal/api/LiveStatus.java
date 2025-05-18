@@ -24,30 +24,35 @@ import com.google.gson.annotations.SerializedName;
  */
 @NonNullByDefault
 public class LiveStatus {
+    @SerializedName("response")
+    public @NonNullByDefault({}) LiveStatusResponse liveStatusResponse;
 
-    @SerializedName("solar_power")
-    public double solarPower;
+    public class LiveStatusResponse {
 
-    @SerializedName("battery_power")
-    public double batteryPower;
+        @SerializedName("solar_power")
+        public double solarPower;
 
-    @SerializedName("load_power")
-    public double loadPower;
+        @SerializedName("battery_power")
+        public double batteryPower;
 
-    @SerializedName("grid_power")
-    public double gridPower;
+        @SerializedName("load_power")
+        public double loadPower;
 
-    @SerializedName("percentage_charged")
-    public float percentageCharged;
+        @SerializedName("grid_power")
+        public double gridPower;
 
-    @SerializedName("grid_status")
-    public String gridStatus = "";
+        @SerializedName("percentage_charged")
+        public float percentageCharged;
 
-    @SerializedName("island_power")
-    public String islandStatus = "";
+        @SerializedName("grid_status")
+        public String gridStatus = "";
 
-    @SerializedName("storm_mode_active")
-    public String stormModeActive = "";
+        @SerializedName("island_power")
+        public String islandStatus = "";
+
+        @SerializedName("storm_mode_active")
+        public boolean stormModeActive;
+    }
 
     private LiveStatus() {
     }

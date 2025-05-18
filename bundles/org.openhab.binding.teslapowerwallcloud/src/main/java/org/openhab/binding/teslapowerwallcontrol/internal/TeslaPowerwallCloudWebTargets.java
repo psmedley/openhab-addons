@@ -96,6 +96,8 @@ public class TeslaPowerwallCloudWebTargets {
     public SiteInfo getSiteInfo(String accessToken, String siteID) throws TeslaPowerwallCloudCommunicationException {
         String response = invoke("GET", BASE_URI + siteID + "/site_info", accessToken);
         SiteInfo siteInfo = gson.fromJson(response, SiteInfo.class);
+        logger.trace("getSiteInfo response = {}", response);
+        logger.info("siteInfo.siteInfoResponse.reserve = {}", siteInfo.siteInfoResponse.reserve);
         return (siteInfo != null) ? siteInfo : null;
     }
 
@@ -103,6 +105,7 @@ public class TeslaPowerwallCloudWebTargets {
     public LiveStatus getLiveStatus(String accessToken, String siteID)
             throws TeslaPowerwallCloudCommunicationException {
         String response = invoke("GET", BASE_URI + siteID + "/live_status", accessToken);
+        logger.trace("getLiveStatus response = {}", response);
         @Nullable
         LiveStatus liveStatus = gson.fromJson(response, LiveStatus.class);
         return (liveStatus != null) ? liveStatus : null;

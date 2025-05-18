@@ -28,7 +28,6 @@ import org.openhab.core.config.core.Configuration;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
-import org.openhab.core.library.unit.MetricPrefix;
 import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
@@ -182,35 +181,29 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
 
         if (siteInfo != null) {
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_POWERWALL_MODE,
-                    new StringType(siteInfo.defaultRealMode));
+                    new StringType(siteInfo.siteInfoResponse.defaultRealMode));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_SITE_NAME,
-                    new StringType(siteInfo.siteName));
+                    new StringType(siteInfo.siteInfoResponse.siteName));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_VERSION,
-                    new StringType(siteInfo.version));
+                    new StringType(siteInfo.siteInfoResponse.version));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_BATTERY_RESERVE,
-                    new QuantityType<>(siteInfo.reserve, Units.PERCENT));
-            switch (siteInfo.stormModeEnabled) {
-                case "true":
-                    updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_STORM_MODE, OnOffType.ON);
-                    break;
-                case "false":
-                    updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_STORM_MODE, OnOffType.OFF);
-                    break;
-            }
+                    new QuantityType<>(siteInfo.siteInfoResponse.reserve, Units.PERCENT));
+            updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_STORM_MODE,
+                    OnOffType.from(siteInfo.siteInfoResponse.stormModeEnabled));
         }
 
         if (liveStatus != null) {
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_SOLAR_POWER,
-                    new QuantityType<>(liveStatus.solarPower, MetricPrefix.KILO(Units.WATT)));
+                    new QuantityType<>(liveStatus.liveStatusResponse.solarPower, Units.WATT));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_HOME_POWER,
-                    new QuantityType<>(liveStatus.loadPower, MetricPrefix.KILO(Units.WATT)));
+                    new QuantityType<>(liveStatus.liveStatusResponse.loadPower, Units.WATT));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_GRID_POWER,
-                    new QuantityType<>(liveStatus.gridPower, MetricPrefix.KILO(Units.WATT)));
+                    new QuantityType<>(liveStatus.liveStatusResponse.gridPower, Units.WATT));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_BATTERY_POWER,
-                    new QuantityType<>(liveStatus.batteryPower, MetricPrefix.KILO(Units.WATT)));
+                    new QuantityType<>(liveStatus.liveStatusResponse.batteryPower, Units.WATT));
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_PERCENT_CHARGED,
-                    new QuantityType<>(liveStatus.percentageCharged, Units.PERCENT));
-            switch (liveStatus.gridStatus) {
+                    new QuantityType<>(liveStatus.liveStatusResponse.percentageCharged, Units.PERCENT));
+            switch (liveStatus.liveStatusResponse.gridStatus) {
                 case "Active":
                     updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_GRID_STATUS, OnOffType.ON);
                     break;
@@ -219,17 +212,9 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
                     break;
             }
             updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_ISLAND_STATUS,
-                    new StringType(liveStatus.islandStatus));
-            switch (liveStatus.stormModeActive) {
-                case "true":
-                    updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_STORM_MODE_ACTIVE,
-                            OnOffType.ON);
-                    break;
-                case "false":
-                    updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_STORM_MODE_ACTIVE,
-                            OnOffType.OFF);
-                    break;
-            }
+                    new StringType(liveStatus.liveStatusResponse.islandStatus));
+            updateState(TeslaPowerwallCloudBindingConstants.CHANNEL_POWERWALLCLOUD_STORM_MODE_ACTIVE,
+                    OnOffType.from(liveStatus.liveStatusResponse.stormModeActive));
         }
     }
 }
