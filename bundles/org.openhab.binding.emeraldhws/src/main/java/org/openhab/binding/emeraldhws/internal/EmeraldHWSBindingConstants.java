@@ -27,8 +27,9 @@ public class EmeraldHWSBindingConstants {
     private static final String BINDING_ID = "emeraldhws";
 
     // List of all Thing Type UIDs
-    public static final ThingTypeUID THING_TYPE_SAMPLE = new ThingTypeUID(BINDING_ID, "sample");
+    public static final ThingTypeUID THING_TYPE_ACCOUNT = new ThingTypeUID(BINDING_ID, "account");
+    public static final ThingTypeUID THING_TYPE_HWS = new ThingTypeUID(BINDING_ID, "hws");
 
     // List of all Channel ids
-    public static final String CHANNEL_1 = "channel1";
+    public static final String CHANNEL_CURRENT_TEMPERATURE = "current-temperature";
 }

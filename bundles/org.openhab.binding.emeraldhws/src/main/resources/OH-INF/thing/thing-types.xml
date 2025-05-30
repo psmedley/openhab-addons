@@ -4,45 +4,53 @@
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
-	<!-- Sample Thing Type -->
-	<thing-type id="sample">
-		<!-- Comment this in for Things which need a Bridge to function.
-			<supported-bridge-type-refs>
-			<bridge-type-ref id="EmeraldHWSBridge" />
-			</supported-bridge-type-refs>
-		-->
-
-		<label>EmeraldHWS Binding Thing</label>
-		<description>Sample thing for EmeraldHWS Binding</description>
-
-		<channels>
-			<channel id="channel1" typeId="sample-channel"/>
-		</channels>
-
+	<bridge-type id="account">
+		<label>Emerald Account</label>
+		<description>Emerald Account</description>
+		<semantic-equipment-tag>WebService</semantic-equipment-tag>
 		<config-description>
-			<parameter name="hostname" type="text" required="true">
-				<context>network-address</context>
-				<label>Hostname</label>
-				<description>Hostname or IP address of the device</description>
+			<parameter name="email" type="text" required="true">
+				<context>email</context>
+				<label>Email Address</label>
+				<description>The email address for logging into the Emerald app</description>
 			</parameter>
 			<parameter name="password" type="text" required="true">
 				<context>password</context>
 				<label>Password</label>
-				<description>Password to access the device</description>
+				<description>The password for the supplied user account</description>
 			</parameter>
 			<parameter name="refreshInterval" type="integer" unit="s" min="1">
 				<label>Refresh Interval</label>
-				<description>Interval the device is polled in sec.</description>
+				<description>Interval the account is polled in sec.</description>
 				<default>600</default>
 				<advanced>true</advanced>
 			</parameter>
 		</config-description>
+	</bridge-type>
+
+	<thing-type id="hws">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="account"/>
+		</supported-bridge-type-refs>
+		<label>Emerald HWS</label>
+		<description>Thing for Emerald HWS</description>
+
+		<channels>
+			<channel id="current-temperature" typeId="current-temperature"/>
+		</channels>
+
+		<config-description>
+			<parameter name="uuid" type="text" required="true">
+				<context>uuid</context>
+				<label>UUID of HWS</label>
+				<description>The UUID associated with the HWS</description>
+			</parameter>
+		</config-description>
 	</thing-type>
 
-	<!-- Sample Channel Type -->
-	<channel-type id="sample-channel">
+	<channel-type id="current-temperature">
 		<item-type>Number:Temperature</item-type>
-		<label>Example Temperature</label><!-- Use uppercase words, except prepositions. 2-3 words, max 25 chars -->
-		<description>Sample channel for EmeraldHWS Binding</description>
+		<label>HWS Temperature</label>
+		<description>Current Temperature of Hot Water</description>
 	</channel-type>
 </thing:thing-descriptions>
