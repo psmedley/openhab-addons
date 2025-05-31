@@ -14,8 +14,6 @@ package org.openhab.binding.emeraldhws.internal;
 
 import static org.openhab.binding.emeraldhws.internal.EmeraldHWSBindingConstants.*;
 
-import java.security.KeyStore;
-import java.security.cert.CertificateFactory;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +21,8 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.openhab.binding.emeraldhws.internal.api.List;
+import org.openhab.binding.emeraldhws.internal.api.Login;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.ThingStatus;
@@ -32,6 +31,8 @@ import org.openhab.core.thing.binding.BaseBridgeHandler;
 import org.openhab.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
 
 /**
  * The {@link EmeraldHWSHandler} is responsible for handling commands, which are
@@ -43,16 +44,21 @@ import org.slf4j.LoggerFactory;
 public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
 
     private final Logger logger = LoggerFactory.getLogger(EmeraldHWSAccountHandler.class);
-    private static final String CERTIFICATE_ALIAS = "caCert";
-    private static final String CERTIFICATE_TYPE = "X.509";
 
     private @Nullable EmeraldHWSConfiguration config;
     protected ScheduledExecutorService executorService = this.scheduler;
     private @Nullable ScheduledFuture<?> pollingJob;
+    private @NonNullByDefault({}) EmeraldHWSWebTargets webTargets;
     private HttpClient httpClient = new HttpClient();
 
-    public EmeraldHWSAccountHandler(Bridge bridge) {
+    private final Gson gson = new Gson();
+
+    String token = "";
+
+    public EmeraldHWSAccountHandler(Bridge bridge, HttpClient httpClient) {
         super(bridge);
+        config = getConfigAs(EmeraldHWSConfiguration.class);
+        webTargets = new EmeraldHWSWebTargets(httpClient);
     }
 
     @Override
@@ -63,27 +69,6 @@ public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
     @Override
     public void initialize() {
         config = getConfigAs(EmeraldHWSConfiguration.class);
-
-        String caCertPath = "SFSRootCAG2.pem";
-
-        // Create an SSL context factory and set the CA certificate
-        KeyStore keyStore = null;
-        ClassLoader classloader = this.getClass().getClassLoader();
-        if (classloader != null) {
-            try {
-                keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-                keyStore.load(null, null);
-                keyStore.setCertificateEntry(CERTIFICATE_ALIAS, CertificateFactory.getInstance(CERTIFICATE_TYPE)
-                        .generateCertificate(classloader.getResourceAsStream(caCertPath)));
-            } catch (Exception ex) {
-            }
-
-            SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
-            sslContextFactory.setTrustStore(keyStore);
-            sslContextFactory.setEndpointIdentificationAlgorithm(null);
-            sslContextFactory.setHostnameVerifier((hostname, sslSession) -> true);
-            httpClient = new HttpClient(sslContextFactory);
-        }
 
         if (configure()) {
             updateStatus(ThingStatus.UNKNOWN);
@@ -135,7 +120,31 @@ public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
     }
 
     protected void pollData() {
-        updateStatus(ThingStatus.ONLINE);
+        try {
+            if ("".equals(token)) {
+                Login loginResponse;
+                loginResponse = webTargets.getToken(config.email, config.password);
+                if (loginResponse != null) {
+                    token = loginResponse.token;
+                }
+            }
+            List listResponse;
+            listResponse = webTargets.getList(config.email, config.password);
+            for (int i = 0; i < listResponse.info.property.length; i++) {
+                for (int j = 0; j < listResponse.info.property[i].heatpump.length; j++) {
+                    logger.info("Found Heat Pump id = {}", listResponse.info.property[i].heatpump[j].id);
+                }
+            }
+            updateStatus(ThingStatus.ONLINE);
+        } catch (EmeraldHWSAuthenticationException e) {
+            logger.debug("Unexpected authentication error connecting to Emerald API", e);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getMessage());
+            return;
+        } catch (EmeraldHWSCommunicationException e) {
+            logger.debug("Unexpected error connecting to Emerald API", e);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
+            return;
+        }
     }
 
     /**

@@ -14,8 +14,13 @@ package org.openhab.binding.emeraldhws.internal;
 
 import static org.openhab.binding.emeraldhws.internal.EmeraldHWSBindingConstants.*;
 
+import java.security.KeyStore;
+import java.security.cert.CertificateFactory;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
@@ -37,6 +42,9 @@ public class EmeraldHWSHandler extends BaseThingHandler {
     private final Logger logger = LoggerFactory.getLogger(EmeraldHWSHandler.class);
 
     private @Nullable EmeraldHWSConfiguration config;
+    private static final String CERTIFICATE_ALIAS = "caCert";
+    private static final String CERTIFICATE_TYPE = "X.509";
+    private HttpClient httpClient = new HttpClient();
 
     public EmeraldHWSHandler(Thing thing) {
         super(thing);
@@ -61,6 +69,27 @@ public class EmeraldHWSHandler extends BaseThingHandler {
     @Override
     public void initialize() {
         config = getConfigAs(EmeraldHWSConfiguration.class);
+
+        String caCertPath = "SFSRootCAG2.pem";
+
+        // Create an SSL context factory and set the CA certificate
+        KeyStore keyStore = null;
+        ClassLoader classloader = this.getClass().getClassLoader();
+        if (classloader != null) {
+            try {
+                keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+                keyStore.load(null, null);
+                keyStore.setCertificateEntry(CERTIFICATE_ALIAS, CertificateFactory.getInstance(CERTIFICATE_TYPE)
+                        .generateCertificate(classloader.getResourceAsStream(caCertPath)));
+            } catch (Exception ex) {
+            }
+
+            SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
+            sslContextFactory.setTrustStore(keyStore);
+            sslContextFactory.setEndpointIdentificationAlgorithm(null);
+            sslContextFactory.setHostnameVerifier((hostname, sslSession) -> true);
+            httpClient = new HttpClient(sslContextFactory);
+        }
 
         // TODO: Initialize the handler.
         // The framework requires you to return from this method quickly, i.e. any network access must be done in

@@ -18,13 +18,18 @@ import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.client.HttpClient;
+import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandlerFactory;
 import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.thing.binding.ThingHandlerFactory;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * The {@link EmeraldHWSHandlerFactory} is responsible for creating things and thing
@@ -35,6 +40,14 @@ import org.osgi.service.component.annotations.Component;
 @NonNullByDefault
 @Component(configurationPid = "binding.emeraldhws", service = ThingHandlerFactory.class)
 public class EmeraldHWSHandlerFactory extends BaseThingHandlerFactory {
+
+    private final HttpClient httpClient;
+
+    @Activate
+    public EmeraldHWSHandlerFactory(@Reference HttpClientFactory httpClientFactory, ComponentContext componentContext) {
+        super.activate(componentContext);
+        this.httpClient = httpClientFactory.getCommonHttpClient();
+    }
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_HWS);
 
@@ -48,7 +61,7 @@ public class EmeraldHWSHandlerFactory extends BaseThingHandlerFactory {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
         if (THING_TYPE_ACCOUNT.equals(thingTypeUID)) {
-            return new EmeraldHWSAccountHandler((Bridge) thing);
+            return new EmeraldHWSAccountHandler((Bridge) thing, httpClient);
         } else {
             return new EmeraldHWSHandler(thing);
         }

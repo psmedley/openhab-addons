@@ -17,18 +17,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
+import org.openhab.binding.emeraldhws.internal.api.List;
+import org.openhab.binding.emeraldhws.internal.api.Login;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 /**
  * Handles performing the actual HTTP requests for communicating with the Emerald Servers.
@@ -41,48 +43,60 @@ public class EmeraldHWSWebTargets {
     private static final int TIMEOUT_MS = 30000;
 
     private String getTokenUri = "https://api.emerald-ems.com.au/api/v1/customer/sign-in";
-    private String token = "";
+    private String getListUri = "https://api.emerald-ems.com.au/api/v1/customer/property/list";
     private final Logger logger = LoggerFactory.getLogger(EmeraldHWSWebTargets.class);
     private HttpClient httpClient;
-
+    String token = "";
     private final Gson gson = new Gson();
 
-    public EmeraldHWSWebTargets(String hostname, HttpClient httpClient) {
+    public EmeraldHWSWebTargets(HttpClient httpClient) {
         this.httpClient = httpClient;
     }
 
-    public String getToken(String email, String password)
+    @Nullable
+    public Login getToken(String email, String password)
             throws EmeraldHWSCommunicationException, EmeraldHWSAuthenticationException {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("username", "customer");
-        jsonObject.addProperty("password", password);
-        jsonObject.addProperty("email", email);
-        jsonObject.addProperty("force_sm_off", false);
-        logger.debug("logonjson = {}", jsonObject.toString());
-        String response = invoke(getTokenUri, HttpMethod.POST, "Content-Type", "application/json",
-                jsonObject.toString());
-        JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
-        String token = jsonResponse.get("token").getAsString();
-        logger.debug("Token: {}", token);
-        return token;
+        JsonObject payload = new JsonObject();
+        payload.addProperty("app_version", "2.5.3");
+        payload.addProperty("device_name", "iPhone15,2");
+        payload.addProperty("device_os_version", "17.2.1");
+        payload.addProperty("device_type", "iOS");
+        payload.addProperty("password", password);
+        payload.addProperty("email", email);
+        payload.addProperty("password", password);
+        logger.debug("payload = {}", payload.toString());
+        String response = invoke(getTokenUri, HttpMethod.POST, null, null, payload.toString());
+        return gson.fromJson(response, Login.class);
+    }
+
+    @Nullable
+    public List getList(String email, String password)
+            throws EmeraldHWSCommunicationException, EmeraldHWSAuthenticationException {
+        String response = invoke(getListUri, email, password);
+        return gson.fromJson(response, List.class);
     }
 
     private String invoke(String uri, String email, String password)
             throws EmeraldHWSCommunicationException, EmeraldHWSAuthenticationException {
         if (token.isEmpty()) {
-            token = getToken(email, password);
+            Login login = getToken(email, password);
+            token = login.token;
         }
         return invoke(uri, HttpMethod.GET, "Authorization", "Bearer " + token, "");
     }
 
-    private String invoke(String uri, HttpMethod method, String headerKey, String headerValue, String params)
-            throws EmeraldHWSCommunicationException, EmeraldHWSAuthenticationException {
+    private String invoke(String uri, HttpMethod method, @Nullable String headerKey, @Nullable String headerValue,
+            String params) throws EmeraldHWSCommunicationException, EmeraldHWSAuthenticationException {
         logger.debug("Calling url: {}", uri);
         int status = 0;
         String jsonResponse = "";
         synchronized (this) {
             try {
-                Request request = httpClient.newRequest(uri).method(method).header(headerKey, headerValue)
+                Request request = httpClient.newRequest(uri).method(method).header("accept", "*/*")
+                        .header("content-type", "application/json")
+                        .header("user-agent",
+                                "EmeraldPlanet/2.5.3 (com.emerald-ems.customer; build:5; iOS 17.2.1) Alamofire/5.4.1")
+                        .header("accept-language", "en-GB;q=1.0, en-AU;q=0.9").header(headerKey, headerValue)
                         .timeout(TIMEOUT_MS, TimeUnit.MILLISECONDS)
                         .content(new StringContentProvider(params), "application/json");
                 if (logger.isTraceEnabled()) {
