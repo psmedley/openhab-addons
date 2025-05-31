@@ -17,7 +17,9 @@ import static org.openhab.binding.emeraldhws.internal.EmeraldHWSBindingConstants
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.emeraldhws.internal.api.List;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
+import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
@@ -128,8 +130,14 @@ public class EmeraldHWSHandler extends BaseThingHandler {
             for (int i = 0; i < api.info.property.length; i++) {
                 for (int j = 0; j < api.info.property[i].heatpump.length; j++) {
                     if (config.uuid.equals(api.info.property[i].heatpump[j].id)) {
+                        updateState(EmeraldHWSBindingConstants.CHANNEL_POWER,
+                                OnOffType.from(api.info.property[i].heatpump[j].lastState.switchOn));
+                        updateState(EmeraldHWSBindingConstants.CHANNEL_MODE,
+                                new StringType(String.valueOf(api.info.property[i].heatpump[j].lastState.mode)));
                         updateState(EmeraldHWSBindingConstants.CHANNEL_CURRENT_TEMPERATURE, new QuantityType<>(
                                 api.info.property[i].heatpump[j].lastState.tempCurrent, SIUnits.CELSIUS));
+                        updateState(EmeraldHWSBindingConstants.CHANNEL_SET_TEMPERATURE, new QuantityType<>(
+                                api.info.property[i].heatpump[j].lastState.tempSet, SIUnits.CELSIUS));
                     }
                 }
             }

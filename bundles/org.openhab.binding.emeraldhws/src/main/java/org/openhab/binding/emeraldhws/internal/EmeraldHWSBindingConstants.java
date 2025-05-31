@@ -31,5 +31,8 @@ public class EmeraldHWSBindingConstants {
     public static final ThingTypeUID THING_TYPE_HWS = new ThingTypeUID(BINDING_ID, "hws");
 
     // List of all Channel ids
+    public static final String CHANNEL_POWER = "power";
+    public static final String CHANNEL_MODE = "mode";
     public static final String CHANNEL_CURRENT_TEMPERATURE = "current-temperature";
+    public static final String CHANNEL_SET_TEMPERATURE = "set-temperature";
 }
