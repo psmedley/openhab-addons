@@ -45,11 +45,12 @@ public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
 
     private final Logger logger = LoggerFactory.getLogger(EmeraldHWSAccountHandler.class);
 
-    private @Nullable EmeraldHWSConfiguration config;
+    private @Nullable EmeraldHWSAccountConfiguration config;
     protected ScheduledExecutorService executorService = this.scheduler;
     private @Nullable ScheduledFuture<?> pollingJob;
     private @NonNullByDefault({}) EmeraldHWSWebTargets webTargets;
     private HttpClient httpClient = new HttpClient();
+    private @Nullable List emeraldHWSList;
 
     private final Gson gson = new Gson();
 
@@ -57,8 +58,16 @@ public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
 
     public EmeraldHWSAccountHandler(Bridge bridge, HttpClient httpClient) {
         super(bridge);
-        config = getConfigAs(EmeraldHWSConfiguration.class);
+        config = getConfigAs(EmeraldHWSAccountConfiguration.class);
         webTargets = new EmeraldHWSWebTargets(httpClient);
+    }
+
+    public List getApi() {
+        List api = emeraldHWSList;
+        if (api == null) {
+            throw new IllegalStateException();
+        }
+        return api;
     }
 
     @Override
@@ -68,7 +77,7 @@ public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
 
     @Override
     public void initialize() {
-        config = getConfigAs(EmeraldHWSConfiguration.class);
+        config = getConfigAs(EmeraldHWSAccountConfiguration.class);
 
         if (configure()) {
             updateStatus(ThingStatus.UNKNOWN);
@@ -128,13 +137,20 @@ public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
                     token = loginResponse.token;
                 }
             }
-            List listResponse;
-            listResponse = webTargets.getList(config.email, config.password);
-            for (int i = 0; i < listResponse.info.property.length; i++) {
-                for (int j = 0; j < listResponse.info.property[i].heatpump.length; j++) {
-                    logger.info("Found Heat Pump id = {}", listResponse.info.property[i].heatpump[j].id);
+            emeraldHWSList = webTargets.getList(config.email, config.password);
+            for (int i = 0; i < emeraldHWSList.info.property.length; i++) {
+                for (int j = 0; j < emeraldHWSList.info.property[i].heatpump.length; j++) {
+                    logger.info("Found Heat Pump id = {}", emeraldHWSList.info.property[i].heatpump[j].id);
                 }
             }
+
+            this.getThing().getThings().forEach(thing -> {
+                EmeraldHWSHandler handler = (EmeraldHWSHandler) thing.getHandler();
+                if (handler != null) {
+                    handler.updateChannels();
+                }
+            });
+
             updateStatus(ThingStatus.ONLINE);
         } catch (EmeraldHWSAuthenticationException e) {
             logger.debug("Unexpected authentication error connecting to Emerald API", e);

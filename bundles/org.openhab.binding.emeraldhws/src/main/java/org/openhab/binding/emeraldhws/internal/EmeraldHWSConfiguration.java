@@ -25,7 +25,5 @@ public class EmeraldHWSConfiguration {
     /**
      * Sample configuration parameters. Replace with your own.
      */
-    public String email = "";
-    public String password = "";
-    public int refreshInterval = 600;
+    public String uuid = "";
 }
