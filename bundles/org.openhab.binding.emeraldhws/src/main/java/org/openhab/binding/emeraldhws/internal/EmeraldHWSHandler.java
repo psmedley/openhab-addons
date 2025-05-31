@@ -132,8 +132,13 @@ public class EmeraldHWSHandler extends BaseThingHandler {
                     if (config.uuid.equals(api.info.property[i].heatpump[j].id)) {
                         updateState(EmeraldHWSBindingConstants.CHANNEL_POWER,
                                 OnOffType.from(api.info.property[i].heatpump[j].lastState.switchOn));
-                        updateState(EmeraldHWSBindingConstants.CHANNEL_MODE,
-                                new StringType(String.valueOf(api.info.property[i].heatpump[j].lastState.mode)));
+                        if (api.info.property[i].heatpump[j].lastState.mode == 0) {
+                            updateState(EmeraldHWSBindingConstants.CHANNEL_MODE, new StringType("Boost"));
+                        } else if (api.info.property[i].heatpump[j].lastState.mode == 1) {
+                            updateState(EmeraldHWSBindingConstants.CHANNEL_MODE, new StringType("Normal"));
+                        } else if (api.info.property[i].heatpump[j].lastState.mode == 2) {
+                            updateState(EmeraldHWSBindingConstants.CHANNEL_MODE, new StringType("Quiet"));
+                        }
                         updateState(EmeraldHWSBindingConstants.CHANNEL_CURRENT_TEMPERATURE, new QuantityType<>(
                                 api.info.property[i].heatpump[j].lastState.tempCurrent, SIUnits.CELSIUS));
                         updateState(EmeraldHWSBindingConstants.CHANNEL_SET_TEMPERATURE, new QuantityType<>(
