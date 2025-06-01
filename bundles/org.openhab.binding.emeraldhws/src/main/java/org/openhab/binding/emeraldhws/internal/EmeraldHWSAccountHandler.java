@@ -27,6 +27,7 @@ import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
+import org.openhab.core.thing.ThingUID;
 import org.openhab.core.thing.binding.BaseBridgeHandler;
 import org.openhab.core.types.Command;
 import org.slf4j.Logger;
@@ -68,6 +69,10 @@ public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
             throw new IllegalStateException();
         }
         return api;
+    }
+
+    public ThingUID getUID() {
+        return thing.getUID();
     }
 
     @Override

@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.emeraldhws.internal;
 
+import java.util.Set;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.core.thing.ThingTypeUID;
 
@@ -35,4 +37,7 @@ public class EmeraldHWSBindingConstants {
     public static final String CHANNEL_MODE = "mode";
     public static final String CHANNEL_CURRENT_TEMPERATURE = "current-temperature";
     public static final String CHANNEL_SET_TEMPERATURE = "set-temperature";
+
+    public static final Set<ThingTypeUID> BRIDGE_THING_TYPES_UIDS = Set.of(THING_TYPE_ACCOUNT);
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_HWS);
 }
