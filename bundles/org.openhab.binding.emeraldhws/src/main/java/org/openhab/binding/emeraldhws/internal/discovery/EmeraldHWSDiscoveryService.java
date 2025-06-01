@@ -15,16 +15,14 @@ package org.openhab.binding.emeraldhws.internal.discovery;
 import static org.openhab.binding.emeraldhws.internal.EmeraldHWSBindingConstants.*;
 
 import java.util.HashMap;
-import java.util.concurrent.ScheduledFuture;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.emeraldhws.internal.EmeraldHWSAccountHandler;
 import org.openhab.core.config.discovery.AbstractThingHandlerDiscoveryService;
 import org.openhab.core.config.discovery.DiscoveryResultBuilder;
-import org.openhab.core.config.discovery.DiscoveryService;
 import org.openhab.core.thing.ThingUID;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ServiceScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,23 +33,20 @@ import org.slf4j.LoggerFactory;
  * @author paul@smedley.id.au - Initial contribution
  */
 
-@Component(service = DiscoveryService.class, immediate = true, configurationPid = "discovery.emeraldhws")
+@Component(scope = ServiceScope.PROTOTYPE, service = EmeraldHWSDiscoveryService.class)
 @NonNullByDefault
 public class EmeraldHWSDiscoveryService extends AbstractThingHandlerDiscoveryService<EmeraldHWSAccountHandler> {
 
     private Logger logger = LoggerFactory.getLogger(EmeraldHWSDiscoveryService.class);
-    private @Nullable ScheduledFuture<?> discoveryJob;
+    private @NonNullByDefault({}) ThingUID bridgeUid;
 
-    private @NonNullByDefault({}) ThingUID bridgeUID;
-
-    public EmeraldHWSDiscoveryService(EmeraldHWSAccountHandler handler) {
-        super(EmeraldHWSAccountHandler.class, BRIDGE_THING_TYPES_UIDS, 5, true);
-        this.thingHandler = handler;
+    public EmeraldHWSDiscoveryService() {
+        super(EmeraldHWSAccountHandler.class, SUPPORTED_THING_TYPES_UIDS, 5, false);
     }
 
     @Override
     public void initialize() {
-        bridgeUID = thingHandler.getUID();
+        bridgeUid = thingHandler.getThing().getUID();
         super.initialize();
     }
 
@@ -59,22 +54,14 @@ public class EmeraldHWSDiscoveryService extends AbstractThingHandlerDiscoverySer
         /* getapi() and parse the list..... */
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("uuid", "9b0f0970-ba6d-454d-befd-3688528a6636");
-
-        // final ThingUID bridgeUID = thingHandler.getThing().getUID();
-        ThingUID uid = new ThingUID(THING_TYPE_HWS, "9b0f0970-ba6d-454d-befd-3688528a6636");
-        thingDiscovered(DiscoveryResultBuilder.create(uid).withBridge(bridgeUID).withProperties(properties)
+        ThingUID uid = new ThingUID(THING_TYPE_HWS, bridgeUid, "9b0f0970-ba6d-454d-befd-3688528a6636");
+        thingDiscovered(DiscoveryResultBuilder.create(uid).withBridge(bridgeUid).withProperties(properties)
                 .withRepresentationProperty("uuid").withLabel("Emerald HWS").build());
     }
 
     @Override
     protected void startScan() {
-        logger.debug("Starting device search...");
+        logger.debug("Starting device discovery");
         discover();
-    }
-
-    @Override
-    protected synchronized void stopScan() {
-        removeOlderResults(getTimestampOfLastScan());
-        super.stopScan();
     }
 }

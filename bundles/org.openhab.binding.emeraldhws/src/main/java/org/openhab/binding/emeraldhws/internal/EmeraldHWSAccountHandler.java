@@ -14,6 +14,8 @@ package org.openhab.binding.emeraldhws.internal;
 
 import static org.openhab.binding.emeraldhws.internal.EmeraldHWSBindingConstants.*;
 
+import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -23,12 +25,14 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.emeraldhws.internal.api.List;
 import org.openhab.binding.emeraldhws.internal.api.Login;
+import org.openhab.binding.emeraldhws.internal.discovery.EmeraldHWSDiscoveryService;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.ThingUID;
 import org.openhab.core.thing.binding.BaseBridgeHandler;
+import org.openhab.core.thing.binding.ThingHandlerService;
 import org.openhab.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +76,7 @@ public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
     }
 
     public ThingUID getUID() {
+        logger.info("thing.getUID() = {}", thing.getUID());
         return thing.getUID();
     }
 
@@ -173,5 +178,10 @@ public class EmeraldHWSAccountHandler extends BaseBridgeHandler {
      */
     protected void pollingCode() {
         pollData();
+    }
+
+    @Override
+    public Collection<Class<? extends ThingHandlerService>> getServices() {
+        return Set.of(EmeraldHWSDiscoveryService.class);
     }
 }

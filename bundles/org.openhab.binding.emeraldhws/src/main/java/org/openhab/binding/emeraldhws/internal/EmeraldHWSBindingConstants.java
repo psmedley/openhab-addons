@@ -39,5 +39,5 @@ public class EmeraldHWSBindingConstants {
     public static final String CHANNEL_SET_TEMPERATURE = "set-temperature";
 
     public static final Set<ThingTypeUID> BRIDGE_THING_TYPES_UIDS = Set.of(THING_TYPE_ACCOUNT);
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_HWS);
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_HWS);
 }
