@@ -17,7 +17,9 @@ import static org.openhab.binding.emeraldhws.internal.EmeraldHWSBindingConstants
 import java.util.HashMap;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.emeraldhws.internal.EmeraldHWSAccountHandler;
+import org.openhab.binding.emeraldhws.internal.api.List;
 import org.openhab.core.config.discovery.AbstractThingHandlerDiscoveryService;
 import org.openhab.core.config.discovery.DiscoveryResultBuilder;
 import org.openhab.core.thing.ThingUID;
@@ -50,13 +52,29 @@ public class EmeraldHWSDiscoveryService extends AbstractThingHandlerDiscoverySer
         super.initialize();
     }
 
+    protected @Nullable List getApi() {
+        try {
+            return thingHandler.getApi();
+        } catch (IllegalStateException e) {
+            return null;
+        }
+    }
+
     private void discover() {
         /* getapi() and parse the list..... */
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put("uuid", "9b0f0970-ba6d-454d-befd-3688528a6636");
-        ThingUID uid = new ThingUID(THING_TYPE_HWS, bridgeUid, "9b0f0970-ba6d-454d-befd-3688528a6636");
-        thingDiscovered(DiscoveryResultBuilder.create(uid).withBridge(bridgeUid).withProperties(properties)
-                .withRepresentationProperty("uuid").withLabel("Emerald HWS").build());
+        List api = getApi();
+        int found = 0;
+        if (api != null) {
+            HashMap<String, Object> properties = new HashMap<>();
+            for (int i = 0; i < api.info.property.length; i++) {
+                for (int j = 0; j < api.info.property[i].heatpump.length; j++) {
+                    properties.put("uuid", api.info.property[i].heatpump[j].id);
+                    ThingUID uid = new ThingUID(THING_TYPE_HWS, bridgeUid, api.info.property[i].heatpump[j].id);
+                    thingDiscovered(DiscoveryResultBuilder.create(uid).withBridge(bridgeUid).withProperties(properties)
+                            .withRepresentationProperty("uuid").withLabel("Emerald HWS").build());
+                }
+            }
+        }
     }
 
     @Override
