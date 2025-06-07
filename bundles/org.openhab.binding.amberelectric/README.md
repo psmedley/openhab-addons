@@ -8,16 +8,29 @@ A binding that supports the Australian energy retailer Amber's API (<https://www
 
 ## Discovery
 
-The binding does not support auto discovery.
+Auto-discovery is supported by this binding. 
+After (manually) adding a Amber Account bridge, registered vehicles will be auto discovered.
 
-## Thing Configuration
+## Account Configuration
 
-As a minimum, the apiKey is needed:
+Account configuration is necessary. 
+The easiest way to do this is from the UI. 
+Just add a new thing, select the AmberElectric binding, then Amber Electric Account Binding Thing, and enter the apiKey from the Amber website.
+
 | Thing Parameter | Default Value | Required | Advanced | Description                                                                                           |
 |-----------------|---------------|----------|----------|-------------------------------------------------------------------------------------------------------|
 | apiKey          | N/A           | Yes      | No       | The API key from the 'Developer' section of <https://apps.amber.com.au>                               |
-| nmi             | N/A           | No       | No       | The NMI (NMI (National Metering Identifier) for your property. Required if you have multiple accounts |
 | refresh         | 60            | No       | Yes      | The refresh rate (in seconds) for querying the API.                                                   |
+
+## Thing Configuration
+
+As a minimum, the siteID is needed, which can be found by querying the Amber API.
+It is recommended to add sites using the Discovery Service.
+
+| Thing Parameter | Default Value | Required | Advanced | Description                                                                          |
+|-----------------|---------------|----------|----------|--------------------------------------------------------------------------------------|
+| siteID          | N/A           | Yes      | No       | Site ID from the Amber API                                                           |
+| refreshInterval | 60            | No       | Yes      | The frequency with which to refresh information from Teslascope specified in seconds |
 
 ## Channels
 
