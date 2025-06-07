@@ -29,7 +29,8 @@ public class AmberElectricBindingConstants {
     private static final String BINDING_ID = "amberelectric";
 
     // List of all Thing Type UIDs
-    public static final ThingTypeUID AMBERELECTRIC_THING = new ThingTypeUID(BINDING_ID, "service");
+    public static final ThingTypeUID AMBERELECTRIC_ACCOUNT = new ThingTypeUID(BINDING_ID, "account");
+    public static final ThingTypeUID AMBERELECTRIC_SITE = new ThingTypeUID(BINDING_ID, "service");
 
     // List of all Channel ids
     public static final String CHANNEL_ELECTRICITY_PRICE = "electricity-price";
@@ -42,5 +43,7 @@ public class AmberElectricBindingConstants {
     public static final String CHANNEL_RENEWABLES = "renewables";
     public static final String CHANNEL_SPIKE = "spike";
 
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(AMBERELECTRIC_THING);
+    public static final Set<ThingTypeUID> BRIDGE_THING_TYPES_UIDS = Set.of(AMBERELECTRIC_ACCOUNT);
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(AMBERELECTRIC_ACCOUNT,
+            AMBERELECTRIC_SITE);
 }

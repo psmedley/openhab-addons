@@ -15,14 +15,13 @@ package org.openhab.binding.amberelectric.internal;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
- * The AmberElectricConfiguration class contains fields mapping thing configuration parameters.
+ * The AmberElectricSiteConfiguration class contains fields mapping thing configuration parameters.
  *
  * @author Paul Smedley - Initial contribution
  */
 @NonNullByDefault
-public class AmberElectricConfiguration {
-    public String apiKey = "";
-    public String nmi = "";
+public class AmberElectricSiteConfiguration {
+    public String id = "";
     public long refresh = 60;
     public long forecasts = 288;
 }

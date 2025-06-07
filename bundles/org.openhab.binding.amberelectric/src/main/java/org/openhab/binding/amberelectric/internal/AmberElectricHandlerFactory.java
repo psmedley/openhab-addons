@@ -12,8 +12,11 @@
  */
 package org.openhab.binding.amberelectric.internal;
 
+import static org.openhab.binding.amberelectric.internal.AmberElectricBindingConstants.*;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandlerFactory;
@@ -40,10 +43,10 @@ public class AmberElectricHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
-        if (thingTypeUID.equals(AmberElectricBindingConstants.AMBERELECTRIC_THING)) {
-            return new AmberElectricHandler(thing);
+        if (AMBERELECTRIC_ACCOUNT.equals(thingTypeUID)) {
+            return new AmberElectricAccountHandler((Bridge) thing);
+        } else {
+            return new AmberElectricSiteHandler(thing);
         }
-
-        return null;
     }
 }

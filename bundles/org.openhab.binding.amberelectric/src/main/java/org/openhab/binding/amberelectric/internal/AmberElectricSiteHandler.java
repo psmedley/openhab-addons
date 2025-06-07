@@ -27,7 +27,6 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.amberelectric.internal.api.CurrentPrices;
 import org.openhab.binding.amberelectric.internal.api.Sites;
-import org.openhab.core.config.core.Configuration;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
@@ -49,28 +48,27 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 
 /**
- * The {@link AmberElectricHandler} is responsible for handling commands, which are
+ * The {@link AmberElectricSiteHandler} is responsible for handling commands, which are
  * sent to one of the channels.
  *
  * @author Paul Smedley - Initial contribution
  */
 @NonNullByDefault
-public class AmberElectricHandler extends BaseThingHandler {
+public class AmberElectricSiteHandler extends BaseThingHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(AmberElectricHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(AmberElectricSiteHandler.class);
 
     private long refreshInterval;
     private String apiKey = "";
-    private String nmi = "";
     private String siteID = "";
 
-    private @NonNullByDefault({}) AmberElectricConfiguration config;
+    private @NonNullByDefault({}) AmberElectricSiteConfiguration config;
     private @NonNullByDefault({}) AmberElectricWebTargets webTargets;
     private @Nullable ScheduledFuture<?> pollFuture;
 
     private Gson gson = new Gson();
 
-    public AmberElectricHandler(Thing thing) {
+    public AmberElectricSiteHandler(Thing thing) {
         super(thing);
     }
 
@@ -81,18 +79,16 @@ public class AmberElectricHandler extends BaseThingHandler {
 
     @Override
     public void initialize() {
-        config = getConfigAs(AmberElectricConfiguration.class);
-        if (config.apiKey.isBlank()) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
-                    "@text/offline.conf-error.no-api-key");
+        config = getConfigAs(AmberElectricSiteConfiguration.class);
+        if (config.id.isBlank()) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "@text/offline.conf-error.no-id");
             return;
         }
 
         webTargets = new AmberElectricWebTargets();
         updateStatus(ThingStatus.UNKNOWN);
         refreshInterval = config.refresh;
-        nmi = config.nmi;
-        apiKey = config.apiKey;
+        siteID = config.id;
 
         schedulePoll();
     }
@@ -137,43 +133,31 @@ public class AmberElectricHandler extends BaseThingHandler {
 
     private void pollStatus() throws IOException {
         try {
-            if ("".equals(siteID)) {
-                String responseSites = webTargets.getSites(apiKey);
-                logger.trace("responseSites = {}", responseSites);
-                JsonArray jsonArraySites = JsonParser.parseString(responseSites).getAsJsonArray();
-                Sites sites = new Sites();
-                for (int i = 0; i < jsonArraySites.size(); i++) {
-                    sites = gson.fromJson(jsonArraySites.get(i), Sites.class);
-                    if (sites == null) {
-                        return;
-                    }
-                    if (nmi.equals(sites.nmi)) {
-                        siteID = sites.id;
-                    }
+            String responseSites = webTargets.getSites(apiKey);
+            logger.trace("responseSites = {}", responseSites);
+            JsonArray jsonArraySites = JsonParser.parseString(responseSites).getAsJsonArray();
+            Sites sites = new Sites();
+            for (int i = 0; i < jsonArraySites.size(); i++) {
+                sites = gson.fromJson(jsonArraySites.get(i), Sites.class);
+                if (sites == null) {
+                    return;
                 }
-                if ("".equals(nmi) || "".equals(siteID)) { // nmi not specified, or not found so we take the first
-                                                           // siteid found
-                    sites = gson.fromJson(jsonArraySites.get(0), Sites.class);
-                    if (sites == null) {
-                        return;
-                    }
+                if (siteID.equals(sites.id)) {
                     siteID = sites.id;
-                    nmi = sites.nmi;
-                    Configuration configuration = editConfiguration();
-                    configuration.put("nmi", nmi);
-                    updateConfiguration(configuration);
+                    Map<String, String> properties = editProperties();
+                    properties.put("network", sites.network);
+                    properties.put("nmi", sites.nmi);
+                    properties.put("status", sites.status);
+                    properties.put("activeFrom", sites.activeFrom);
+                    if (sites.channels != null && sites.channels.length > 0) {
+                        properties.put("tariff", sites.channels[0].tariff);
+                    }
+                    properties.put("intervalLength", String.valueOf(sites.intervalLength));
+                    updateProperties(properties);
+                    logger.debug("Detected amber siteid is {}, for nmi {}", sites.id, sites.nmi);
                 }
-                Map<String, String> properties = editProperties();
-                properties.put("network", sites.network);
-                properties.put("status", sites.status);
-                properties.put("activeFrom", sites.activeFrom);
-                if (sites.channels != null && sites.channels.length > 0) {
-                    properties.put("tariff", sites.channels[0].tariff);
-                }
-                properties.put("intervalLength", String.valueOf(sites.intervalLength));
-                updateProperties(properties);
-                logger.debug("Detected amber siteid is {}, for nmi {}", sites.id, sites.nmi);
             }
+
             updateStatus(ThingStatus.ONLINE);
 
             String response = webTargets.getCurrentPrices(siteID, apiKey);
