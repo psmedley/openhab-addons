@@ -59,9 +59,9 @@
 		</properties>
 
 		<config-description>
-			<parameter name="nmi" type="text">
-				<label>NMI</label>
-				<description>NMI for your address (Optional)</description>
+			<parameter name="id" type="text">
+				<label>Site ID</label>
+				<description>Site ID for your address (available from the Amber API)</description>
 			</parameter>
 			<parameter name="refresh" type="integer" min="60" unit="s">
 				<label>Refresh Interval</label>

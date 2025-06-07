@@ -32,6 +32,7 @@ import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.CurrencyUnits;
+import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
@@ -58,6 +59,9 @@ public class AmberElectricSiteHandler extends BaseThingHandler {
 
     private final Logger logger = LoggerFactory.getLogger(AmberElectricSiteHandler.class);
 
+    @Nullable
+    AmberElectricAccountHandler bridgeHandler;
+
     private long refreshInterval;
     private String apiKey = "";
     private String siteID = "";
@@ -77,6 +81,19 @@ public class AmberElectricSiteHandler extends BaseThingHandler {
         logger.warn("This binding is read only");
     }
 
+    protected String getApiKey() {
+        AmberElectricAccountHandler localBridge = bridgeHandler;
+        if (localBridge == null) {
+            return "";
+        }
+        try {
+            return localBridge.getApiKey();
+        } catch (IllegalStateException e) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE, e.getMessage());
+            return "";
+        }
+    }
+
     @Override
     public void initialize() {
         config = getConfigAs(AmberElectricSiteConfiguration.class);
@@ -84,11 +101,19 @@ public class AmberElectricSiteHandler extends BaseThingHandler {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "@text/offline.conf-error.no-id");
             return;
         }
+        Bridge bridge = getBridge();
+        if (bridge == null) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE,
+                    "No Amber Electric Bridge thing selected");
+            return;
+        }
+        bridgeHandler = (AmberElectricAccountHandler) bridge.getHandler();
 
         webTargets = new AmberElectricWebTargets();
         updateStatus(ThingStatus.UNKNOWN);
         refreshInterval = config.refresh;
         siteID = config.id;
+        apiKey = getApiKey();
 
         schedulePoll();
     }
