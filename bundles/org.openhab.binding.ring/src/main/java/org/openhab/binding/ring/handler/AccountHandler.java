@@ -584,7 +584,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
     }
 
     @Override
-    public @Nullable Profile getProfile() {
+    public Profile getProfile() {
         return userProfile;
     }
 

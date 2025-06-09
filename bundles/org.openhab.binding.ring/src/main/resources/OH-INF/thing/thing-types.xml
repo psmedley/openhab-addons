@@ -188,6 +188,9 @@
 		<description>Device Status Information</description>
 		<channels>
 			<channel id="battery" typeId="battery"/>
+			<channel id="url" typeId="url"/>
+			<channel id="createdAt" typeId="createdAt"/>
+			<channel id="kind" typeId="kind"/>
 		</channels>
 	</channel-group-type>
 

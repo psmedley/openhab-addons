@@ -38,7 +38,7 @@ public interface RingAccount {
      *
      * @return the user profile.
      */
-    public @Nullable Profile getProfile();
+    public Profile getProfile();
 
     /**
      * Get the Account Handler Thing ID

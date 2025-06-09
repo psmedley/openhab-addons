@@ -41,6 +41,8 @@ public class RingBindingConstants {
     public static final String CHANNEL_CONTROL_ENABLED = "control#enabled";
 
     public static final String CHANNEL_STATUS_BATTERY = "status#battery";
+    public static final String CHANNEL_STATUS_KIND = "status#kind";
+    public static final String CHANNEL_STATUS_CREATED_AT = "status#createdAt";
 
     public static final String CHANNEL_EVENT_URL = "event#url";
     public static final String CHANNEL_EVENT_CREATED_AT = "event#createdAt";

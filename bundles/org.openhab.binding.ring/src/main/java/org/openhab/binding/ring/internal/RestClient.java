@@ -549,6 +549,17 @@ public class RestClient {
         }
     }
 
+    public synchronized List<RingEventTO> getDeviceHistory(Profile profile, String thingID, int limit)
+            throws AuthenticationException, JsonParseException {
+        String jsonResult = getRequest(
+                ApiConstants.API_BASE + "/clients_api/doorbots/" + thingID + "/history?limit=" + limit, profile);
+        if (!jsonResult.isBlank()) {
+            return Objects.requireNonNull(gson.fromJson(jsonResult, RING_EVENT_LIST_TYPE));
+        } else {
+            return List.of();
+        }
+    }
+
     public String downloadEventVideo(RingEventTO event, Profile profile, String filePath, int retentionCount) {
         try {
             Path path = Paths.get(filePath);
