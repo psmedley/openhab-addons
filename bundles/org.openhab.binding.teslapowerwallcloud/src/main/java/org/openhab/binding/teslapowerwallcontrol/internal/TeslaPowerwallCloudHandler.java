@@ -180,7 +180,7 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
         LiveStatus liveStatus = webTargets.getLiveStatus(accessToken, siteID);
         updateStatus(ThingStatus.ONLINE);
 
-        if (siteInfo != null) {
+        if ((siteInfo != null) && (siteInfo.siteInfoResponse != null)) {
             Map<String, String> properties = editProperties();
             properties.put("sitename", siteInfo.siteInfoResponse.siteName);
             properties.put("version", siteInfo.siteInfoResponse.version);
