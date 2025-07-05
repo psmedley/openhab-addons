@@ -78,7 +78,7 @@ public class SonnenJSONCommunication {
                 powerMeterData = gson.fromJson(response, SonnenJsonPowerMeterDataDTO[].class);
             }
         } catch (IOException | JsonSyntaxException e) {
-            logger.debug("Error processiong Get request {}:  {}", urlStr, e.getMessage());
+            logger.debug("Error processing Get request {}:  {}", urlStr, e.getMessage());
             String message = e.getMessage();
             if (message != null && message.contains("WWW-Authenticate header")) {
                 result = "Given token: " + config.authToken + " is not valid.";
@@ -130,7 +130,7 @@ public class SonnenJSONCommunication {
                 }
             }
         } catch (IOException | JsonSyntaxException | IllegalArgumentException e) {
-            logger.debug("Error processiong Put request {}:  {}", urlStr, e.getMessage());
+            logger.debug("Error processing Put request {}:  {}", urlStr, e.getMessage());
             String message = e.getMessage();
             if (message != null && message.contains("WWW-Authenticate header")) {
                 result = "Given token: " + config.authToken + " is not valid.";
@@ -185,7 +185,7 @@ public class SonnenJSONCommunication {
                 }
             }
         } catch (IOException | JsonSyntaxException | IllegalArgumentException e) {
-            logger.debug("Error processiong Put request {}:  {}", urlStr, e.getMessage());
+            logger.debug("Error processing Put request {}:  {}", urlStr, e.getMessage());
             String message = e.getMessage();
             if (message != null && message.contains("WWW-Authenticate header")) {
                 result = "Given token: " + config.authToken + " is not valid.";
@@ -218,7 +218,7 @@ public class SonnenJSONCommunication {
             }
             batteryData = gson.fromJson(response, SonnenJsonDataDTO.class);
         } catch (IOException | JsonSyntaxException e) {
-            logger.debug("Error processiong Get request {}:  {}", urlStr, e.getMessage());
+            logger.debug("Error processing Get request {}:  {}", urlStr, e.getMessage());
             result = "Cannot find service on given IP " + config.hostIP + ". Please verify the IP address!";
             batteryData = null;
         }
