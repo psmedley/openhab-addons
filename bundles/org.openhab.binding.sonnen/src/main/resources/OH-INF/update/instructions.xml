@@ -48,5 +48,10 @@
 				<type>sonnen:batteryOperationMode</type>
 			</update-channel>
 		</instruction-set>
+		<instruction-set targetVersion="4">
+			<update-channel id="batteryDischargingToGrid">
+				<type>sonnen:batteryDischargingToGrid</type>
+			</update-channel>
+		</instruction-set>
 	</thing-type>
 </update:update-descriptions>

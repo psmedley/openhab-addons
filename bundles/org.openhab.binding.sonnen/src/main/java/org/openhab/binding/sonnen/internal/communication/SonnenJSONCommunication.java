@@ -148,6 +148,61 @@ public class SonnenJSONCommunication {
     }
 
     /**
+     * Start and Stops the discharging of the battery to the grid
+     *
+     * @return an empty string if no error occurred, the error message otherwise.
+     */
+    public String startStopBatteryDischarging(String putData) {
+        String result = "";
+        String urlStr = "http://" + config.hostIP + "/api/v2/configurations";
+        String urlStr2 = "http://" + config.hostIP + "/api/v2/setpoint/discharge/"
+                + Integer.toString(config.chargingPower);
+        Properties header = createHeader(config.authToken);
+        try {
+            // in putData there is 1 or 2 inside to turn on or off the manual mode of the battery
+            // it will be executed by a change of the switch an either turn on or off the manual mode of the battery
+            InputStream targetStream = new ByteArrayInputStream(putData.getBytes(StandardCharsets.UTF_8));
+            String response = HttpUtil.executeUrl("PUT", urlStr, header, targetStream,
+                    "application/x-www-form-urlencoded", 10000);
+            logger.debug("ChargingOperationMode = {}", response);
+            if (response == null) {
+                throw new IOException("HttpUtil.executeUrl returned null");
+            }
+            batteryData = gson.fromJson(response, SonnenJsonDataDTO.class);
+            // if battery is put to manual mode
+            if (config.dischargingPower > 10000) {
+                throw new IllegalArgumentException(
+                        "Max battery charging power in watt needs to be in the range of greater 0 and smaller 10000.");
+            }
+            SonnenJsonDataDTO batteryData2 = getBatteryData();
+            if (batteryData2.emgetOperationMode() != null && Integer.parseInt(batteryData2.emgetOperationMode()) == 1
+                    && config.chargingPower > 0 && config.chargingPower <= 10000) {
+                // start charging
+                String response2 = HttpUtil.executeUrl("POST", urlStr2, header, null, "application/json", 10000);
+                logger.debug("ChargingOperationMode = {}", response2);
+                if (response2 == null) {
+                    throw new IOException("HttpUtil.executeUrl returned null");
+                }
+            }
+        } catch (IOException | JsonSyntaxException | IllegalArgumentException e) {
+            logger.debug("Error processiong Put request {}:  {}", urlStr, e.getMessage());
+            String message = e.getMessage();
+            if (message != null && message.contains("WWW-Authenticate header")) {
+                result = "Given token: " + config.authToken + " is not valid.";
+            } else if (e.getCause() instanceof IllegalArgumentException) {
+                result = "Max battery discharging power needs to be in the range of greater 0 and smaller 10000. It cannot be: "
+                        + config.chargingPower;
+                logger.debug("Error in value for battery capacity: {}", e.getMessage());
+            } else {
+                result = "Cannot find service on given IP " + config.hostIP + ". Please verify the IP address!";
+                logger.debug("Error in establishing connection: {}", e.getMessage());
+            }
+            batteryData = null;
+        }
+        return result;
+    }
+
+    /**
      * Refreshes the battery connection with the Old API Call.
      *
      * @return an empty string if no error occurred, the error message otherwise.

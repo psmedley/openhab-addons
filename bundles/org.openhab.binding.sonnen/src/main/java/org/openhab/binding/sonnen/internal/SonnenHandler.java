@@ -291,6 +291,20 @@ public class SonnenHandler extends BaseThingHandler {
                             update(OnOffType.from(!data.isInAutomaticMode()), channelId);
                         }
                         break;
+                    case CHANNELBATTERYDISCHARGINGGRID:
+                        if (putData != null) {
+                            serviceCommunication.startStopBatteryDischarging(putData);
+                            // put it to true as switch was turned on if it goes into manual mode
+                            if (putData.contains("1")) {
+                                update(OnOffType.from(true), channelId);
+                            } else if (putData.contains("2")) {
+                                update(OnOffType.from(false), channelId);
+                            }
+                        } else {
+                            // Reflect the status of operation mode in the switch
+                            update(OnOffType.from(!data.isInAutomaticMode()), channelId);
+                        }
+                        break;
                     case CHANNELBATTERYOPERATIONMODE:
                         if (!data.isInAutomaticMode()) {
                             state = new StringType("Manual");
@@ -350,6 +364,20 @@ public class SonnenHandler extends BaseThingHandler {
             }
             if (putData != null) {
                 logger.debug("Executing {} command", CHANNELBATTERYCHARGINGGRID);
+                updateChannel(channelUID.getId(), putData);
+            }
+        }
+        if (channelUID.getId().equals(CHANNELBATTERYDISCHARGINGGRID)) {
+            String putData = null;
+            if (command.equals(OnOffType.ON)) {
+                // Set battery to manual mode with 1
+                putData = "EM_OperatingMode=1";
+            } else if (command.equals(OnOffType.OFF)) {
+                // set battery to automatic mode with 2
+                putData = "EM_OperatingMode=2";
+            }
+            if (putData != null) {
+                logger.debug("Executing {} command", CHANNELBATTERYDISCHARGINGGRID);
                 updateChannel(channelUID.getId(), putData);
             }
         }

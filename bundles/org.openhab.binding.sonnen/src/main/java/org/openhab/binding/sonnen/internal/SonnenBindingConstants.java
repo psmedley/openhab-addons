@@ -55,4 +55,7 @@ public class SonnenBindingConstants {
     // List of new Channel ids for battery charging from Grid
     public static final String CHANNELBATTERYCHARGINGGRID = "batteryChargingFromGrid";
     public static final String CHANNELBATTERYOPERATIONMODE = "batteryOperationMode";
+
+    // List of new Channel ids for battery discharging to Grid
+    public static final String CHANNELBATTERYDISCHARGINGGRID = "batteryDischargingToGrid";
 }
