@@ -79,8 +79,8 @@ public class TeslaPowerwallCloudWebTargets {
         logger.debug("payload = {}", payload);
         ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
         try {
-            response = HttpUtil.executeUrl("POST", "https://auth.tesla.com/oauth2/v3/token", httpHeaders, input,
-                    "application/text", TIMEOUT_MS);
+            response = HttpUtil.executeUrl("POST", "https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token",
+                    httpHeaders, input, "application/text", TIMEOUT_MS);
         } catch (IOException ex) {
             logger.debug("Exception during generateAccessToken{}", ex.getLocalizedMessage(), ex);
             // Response will also be set to null if parsing in executeUrl fails so we use null here to make the
