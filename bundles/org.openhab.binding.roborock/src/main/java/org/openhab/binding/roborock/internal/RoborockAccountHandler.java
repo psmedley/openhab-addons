@@ -480,7 +480,7 @@ public class RoborockAccountHandler extends BaseBridgeHandler implements MqttCal
             logger.debug("Publishing {} message to {}", method, topic);
             try {
                 MqttMessage message = new MqttMessage(messageBytes);
-                message.setQos(0);
+                message.setQos(1);
                 message.setRetained(false);
                 mqttClient.publish(topic, message);
                 return id;
