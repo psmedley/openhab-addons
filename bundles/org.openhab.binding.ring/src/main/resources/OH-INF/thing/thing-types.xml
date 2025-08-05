@@ -66,9 +66,8 @@
 		<label>Other Device Binding Thing</label>
 		<description>A Ring Other Device device</description>
 		<channel-groups>
-			<channel-group id="control" typeId="controlGroup"/>
+			<channel-group id="control" typeId="otherControlGroup"/>
 			<channel-group id="status" typeId="deviceStatus"/>
-			<channel id="open-door" typeId="open-door"/>
 		</channel-groups>
 		<config-description>
 			<parameter name="id" type="text">
@@ -177,6 +176,15 @@
 		<description>Operational control and status information</description>
 		<channels>
 			<channel id="enabled" typeId="enabled"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="otherControlGroup">
+		<label>Control</label>
+		<description>Operational control and status information</description>
+		<channels>
+			<channel id="enabled" typeId="enabled"/>
+			<channel id="open-door" typeId="open-door"/>
 		</channels>
 	</channel-group-type>
 
