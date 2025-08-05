@@ -68,6 +68,7 @@
 		<channel-groups>
 			<channel-group id="control" typeId="controlGroup"/>
 			<channel-group id="status" typeId="deviceStatus"/>
+			<channel id="open-door" typeId="open-door"/>
 		</channel-groups>
 		<config-description>
 			<parameter name="id" type="text">
@@ -264,5 +265,10 @@
 			<tag>Level</tag>
 		</tags>
 		<state readOnly="true"></state>
+	</channel-type>
+	<channel-type id="open-door">
+		<item-type>Switch</item-type>
+		<label>Open Door</label>
+		<description>Open Door</description>
 	</channel-type>
 </thing:thing-descriptions>
