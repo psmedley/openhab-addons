@@ -374,7 +374,7 @@ public class RoborockAccountHandler extends BaseBridgeHandler implements MqttCal
         this.mqttClient = null;
     }
 
-    public int sendCommand(String method, String params, String thingID, String localKey, byte[] nonce, int id)
+    public int sendRPCCommand(String method, String params, String thingID, String localKey, byte[] nonce, int id)
             throws UnsupportedEncodingException {
         int timestamp = (int) Instant.now().getEpochSecond();
         int protocol = 101;
@@ -402,7 +402,7 @@ public class RoborockAccountHandler extends BaseBridgeHandler implements MqttCal
         String payload = gson.toJson(payloadMap);
         logger.trace("MQTT payload = {}", payload);
 
-        byte[] messageBytes = build(thingID, localKey, protocol, timestamp, payload.getBytes(StandardCharsets.UTF_8));
+        byte[] messageBytes = build(localKey, protocol, timestamp, payload.getBytes(StandardCharsets.UTF_8));
         // now send message via mqtt
         String topic = "rr/m/i/" + rriot.u + "/" + mqttUser + "/" + thingID;
         if (this.mqttClient != null && this.mqttClient.isConnected()) {
@@ -423,7 +423,7 @@ public class RoborockAccountHandler extends BaseBridgeHandler implements MqttCal
         }
     }
 
-    byte[] build(String thingID, String localKey, int protocol, int timestamp, byte[] payload) {
+    byte[] build(String localKey, int protocol, int timestamp, byte[] payload) {
         try {
             String key = ProtocolUtils.encodeTimestamp(timestamp) + localKey + SALT;
             byte[] encryptedPayload = ProtocolUtils.encrypt(payload, key);
