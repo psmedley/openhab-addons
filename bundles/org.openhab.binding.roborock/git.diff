@@ -1,0 +1,22 @@
+diff --git a/bundles/org.openhab.binding.roborock/src/main/java/org/openhab/binding/roborock/internal/RoborockAccountHandler.java b/bundles/org.openhab.binding.roborock/src/main/java/org/openhab/binding/roborock/internal/RoborockAccountHandler.java
+index 58d5d36c67..a6944e2cf7 100644
+--- a/bundles/org.openhab.binding.roborock/src/main/java/org/openhab/binding/roborock/internal/RoborockAccountHandler.java
++++ b/bundles/org.openhab.binding.roborock/src/main/java/org/openhab/binding/roborock/internal/RoborockAccountHandler.java
+@@ -403,7 +403,7 @@ public class RoborockAccountHandler extends BaseBridgeHandler {
+         String payload = gson.toJson(payloadMap);
+         logger.trace("MQTT payload = {}", payload);
+ 
+-        byte[] message = build(thingID, localKey, protocol, timestamp, payload.getBytes(StandardCharsets.UTF_8));
++        byte[] message = build(localKey, protocol, timestamp, payload.getBytes(StandardCharsets.UTF_8));
+         // now send message via mqtt
+         String topic = "rr/m/i/" + rriot.u + "/" + mqttUser + "/" + thingID;
+         if (this.mqttClient != null && this.mqttClient.getState().isConnected()) {
+@@ -421,7 +421,7 @@ public class RoborockAccountHandler extends BaseBridgeHandler {
+         }
+     }
+ 
+-    byte[] build(String thingID, String localKey, int protocol, int timestamp, byte[] payload) {
++    byte[] build(String localKey, int protocol, int timestamp, byte[] payload) {
+         try {
+             String key = ProtocolUtils.encodeTimestamp(timestamp) + localKey + SALT;
+             byte[] encryptedPayload = ProtocolUtils.encrypt(payload, key);
