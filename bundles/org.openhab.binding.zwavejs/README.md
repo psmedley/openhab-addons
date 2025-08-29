@@ -2,7 +2,7 @@
 
 The `zwavejs` binding integrates Z-Wave JS with openHAB, allowing you to control and monitor Z-Wave devices using the Z-Wave JS Webservice (part of Z-Wave JS UI).
 This binding supports a wide range of Z-Wave devices, including sensors, switches, dimmers, and more.
-For documentation about Z-Wave JS UI, please visit <https://zwave-js.github.io/zwave-js-ui/>.
+For documentation about Z-Wave JS UI, please visit the [Z-Wave JS UI documentation](https://zwave-js.github.io/zwave-js-ui/).
 
 ## Prerequisites
 
@@ -38,12 +38,12 @@ The following discovery features are available:
 The `zwavejs` binding requires configuration of the bridge to connect to the Z-Wave JS Webservice.
 The configuration options include:
 
-| Name                  | Type    | Description                                          | Default | Required | Advanced |
-|-----------------------|---------|------------------------------------------------------|---------|----------|----------|
-| hostname              | text    | Hostname or IP address of the server                 | N/A     | yes      | no       |
-| port                  | number  | Port number to access the service                    | 3000    | yes      | no       |
-| maxMessageSize        | number  | Maximum size of messages in bytes                    | 2097152 | no       | yes      |
-| configurationChannels | boolean | Expose the command class 'configuration' as channels | false   | no       | yes      |
+| Name                  | Type    | Description                                          | Default  | Required | Advanced |
+|-----------------------|---------|------------------------------------------------------|----------|----------|----------|
+| hostname              | text    | Hostname or IP address of the server                 | N/A      | yes      | no       |
+| port                  | number  | Port number to access the service                    | 3000     | yes      | no       |
+| maxMessageSize        | number  | Maximum size of messages in bytes                    | 16777216 | no       | yes      |
+| configurationChannels | boolean | Expose the command class 'configuration' as channels | false    | no       | yes      |
 
 ## Thing Configuration
 
