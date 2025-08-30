@@ -185,6 +185,7 @@ public class VeSyncV2ApiHelper {
             request.header(HttpHeader.CONTENT_TYPE, "application/json; utf-8");
 
             ContentResponse response = request.send();
+
             if (response.getStatus() == HttpURLConnection.HTTP_OK) {
                 VeSyncResponse commResponse = VeSyncConstants.GSON.fromJson(response.getContentAsString(),
                         VeSyncResponse.class);
@@ -242,6 +243,7 @@ public class VeSyncV2ApiHelper {
             request.header(HttpHeader.CONTENT_TYPE, "application/json; utf-8");
 
             ContentResponse response = request.send();
+            logger.info("vesync response = {}", response.getContentAsString());
             if (response.getStatus() == HttpURLConnection.HTTP_OK) {
                 VeSyncLoginResponse loginResponse = VeSyncConstants.GSON.fromJson(response.getContentAsString(),
                         VeSyncLoginResponse.class);

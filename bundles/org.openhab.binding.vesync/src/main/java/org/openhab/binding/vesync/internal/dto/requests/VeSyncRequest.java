@@ -32,7 +32,7 @@ public class VeSyncRequest {
     public String acceptLanguage = "en";
 
     @SerializedName("appVersion")
-    public String appVersion = "2.8.6";
+    public String appVersion = "5.6.60";
 
     @SerializedName("phoneBrand")
     public String phoneBrand = "SM N9005";
