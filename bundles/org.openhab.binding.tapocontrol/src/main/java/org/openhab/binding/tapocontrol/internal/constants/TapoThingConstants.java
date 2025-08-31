@@ -35,6 +35,7 @@ public class TapoThingConstants {
     /*** LIST OF SUPPORTED DEVICE NAMES ***/
     public static final String DEVICE_BRIDGE = "bridge";
     public static final String DEVICE_H100 = "H100";
+    public static final String DEVICE_HS200 = "HS200";
     public static final String DEVICE_P100 = "P100";
     public static final String DEVICE_P105 = "P105";
     public static final String DEVICE_P110 = "P110";
@@ -57,6 +58,7 @@ public class TapoThingConstants {
     public static final String DEVICE_DESCRIPTION_HUB = "SmartHub";
     public static final String DEVICE_DESCRIPTION_SOCKET = "SmartPlug";
     public static final String DEVICE_DESCRIPTION_SOCKET_STRIP = "PowerStrip";
+    public static final String DEVICE_DESCRIPTION_WALL_SWITCH = "WallSwitch";
     public static final String DEVICE_DESCRIPTION_WHITE_BULB = "White-Light-Bulb";
     public static final String DEVICE_DESCRIPTION_COLOR_BULB = "Color-Light-Bulb";
     public static final String DEVICE_DESCRIPTION_LIGHTSTRIP = "LightStrip";
@@ -67,6 +69,7 @@ public class TapoThingConstants {
     /*** LIST OF SUPPORTED THING UIDS ***/
     public static final ThingTypeUID BRIDGE_THING_TYPE = new ThingTypeUID(BINDING_ID, DEVICE_BRIDGE);
     public static final ThingTypeUID H100_THING_TYPE = new ThingTypeUID(BINDING_ID, DEVICE_H100);
+    public static final ThingTypeUID HS200_THING_TYPE = new ThingTypeUID(BINDING_ID, DEVICE_HS200);
     public static final ThingTypeUID P100_THING_TYPE = new ThingTypeUID(BINDING_ID, DEVICE_P100);
     public static final ThingTypeUID P105_THING_TYPE = new ThingTypeUID(BINDING_ID, DEVICE_P105);
     public static final ThingTypeUID P110_THING_TYPE = new ThingTypeUID(BINDING_ID, DEVICE_P110);
@@ -92,6 +95,7 @@ public class TapoThingConstants {
     public static final Set<ThingTypeUID> SUPPORTED_SOCKET_UIDS = Set.of(P100_THING_TYPE, P105_THING_TYPE,
             P110_THING_TYPE, P115_THING_TYPE);
     public static final Set<ThingTypeUID> SUPPORTED_SOCKET_STRIP_UIDS = Set.of(P300_THING_TYPE);
+    public static final Set<ThingTypeUID> SUPPORTED_WALL_SWITCH_UIDS = Set.of(HS200_THING_TYPE);
     public static final Set<ThingTypeUID> SUPPORTED_WHITE_BULB_UIDS = Set.of(L510_THING_TYPE, L610_THING_TYPE);
     public static final Set<ThingTypeUID> SUPPORTED_COLOR_BULB_UIDS = Set.of(L530_THING_TYPE, L630_THING_TYPE);
     public static final Set<ThingTypeUID> SUPPORTED_LIGHT_STRIP_UIDS = Set.of(L900_THING_TYPE, L920_THING_TYPE,
@@ -103,21 +107,21 @@ public class TapoThingConstants {
     public static final Set<ThingTypeUID> SUPPORTED_WEATHER_SENSORS = Set.of(T310_THING_TYPE, T315_THING_TYPE);
 
     /*** SET OF ALL SUPPORTED THINGS ***/
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.unmodifiableSet(Stream
-            .of(SUPPORTED_BRIDGE_UIDS, SUPPORTED_HUB_UIDS, SUPPORTED_SOCKET_UIDS, SUPPORTED_SOCKET_STRIP_UIDS,
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.unmodifiableSet(
+            Stream.of(SUPPORTED_BRIDGE_UIDS, SUPPORTED_HUB_UIDS, SUPPORTED_SOCKET_UIDS, SUPPORTED_SOCKET_STRIP_UIDS,
                     SUPPORTED_WHITE_BULB_UIDS, SUPPORTED_COLOR_BULB_UIDS, SUPPORTED_LIGHT_STRIP_UIDS,
-                    SUPPORTED_SMART_CONTACTS, SUPPORTED_MOTION_SENSORS, SUPPORTED_WEATHER_SENSORS)
-            .flatMap(Set::stream).collect(Collectors.toSet()));
+                    SUPPORTED_SMART_CONTACTS, SUPPORTED_MOTION_SENSORS, SUPPORTED_WEATHER_SENSORS,
+                    SUPPORTED_WALL_SWITCH_UIDS).flatMap(Set::stream).collect(Collectors.toSet()));
 
     /*** THINGS WITH ENERGY DATA ***/
     public static final Set<ThingTypeUID> SUPPORTED_ENERGY_DATA_UIDS = Set.of(P110_THING_TYPE, P115_THING_TYPE);
 
     /*** THINGS WITH CHANNEL GROUPS ***/
-    public static final Set<ThingTypeUID> CHANNEL_GROUP_THING_SET = Collections.unmodifiableSet(Stream
-            .of(SUPPORTED_BRIDGE_UIDS, SUPPORTED_HUB_UIDS, SUPPORTED_SOCKET_UIDS, SUPPORTED_SOCKET_STRIP_UIDS,
+    public static final Set<ThingTypeUID> CHANNEL_GROUP_THING_SET = Collections.unmodifiableSet(
+            Stream.of(SUPPORTED_BRIDGE_UIDS, SUPPORTED_HUB_UIDS, SUPPORTED_SOCKET_UIDS, SUPPORTED_SOCKET_STRIP_UIDS,
                     SUPPORTED_WHITE_BULB_UIDS, SUPPORTED_COLOR_BULB_UIDS, SUPPORTED_LIGHT_STRIP_UIDS,
-                    SUPPORTED_SMART_CONTACTS, SUPPORTED_MOTION_SENSORS, SUPPORTED_WEATHER_SENSORS)
-            .flatMap(Set::stream).collect(Collectors.toSet()));
+                    SUPPORTED_SMART_CONTACTS, SUPPORTED_MOTION_SENSORS, SUPPORTED_WEATHER_SENSORS,
+                    SUPPORTED_WALL_SWITCH_UIDS).flatMap(Set::stream).collect(Collectors.toSet()));
 
     public static final String CHILD_REPRESENTATION_PROPERTY = "serialNumber";
 

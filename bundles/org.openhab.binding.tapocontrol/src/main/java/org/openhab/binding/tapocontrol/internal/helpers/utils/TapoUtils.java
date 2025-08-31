@@ -162,6 +162,8 @@ public class TapoUtils {
                 deviceLabel = DEVICE_DESCRIPTION_SOCKET;
             } else if (SUPPORTED_SOCKET_STRIP_UIDS.contains(deviceUID)) {
                 deviceLabel = DEVICE_DESCRIPTION_SOCKET_STRIP;
+            } else if (SUPPORTED_WALL_SWITCH_UIDS.contains(deviceUID)) {
+                deviceLabel = DEVICE_DESCRIPTION_WALL_SWITCH;
             } else if (SUPPORTED_WHITE_BULB_UIDS.contains(deviceUID)) {
                 deviceLabel = DEVICE_DESCRIPTION_WHITE_BULB;
             } else if (SUPPORTED_COLOR_BULB_UIDS.contains(deviceUID)) {
