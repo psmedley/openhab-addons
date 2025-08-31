@@ -32,6 +32,7 @@ import org.openhab.binding.tapocontrol.internal.devices.wifi.hub.TapoHubHandler;
 import org.openhab.binding.tapocontrol.internal.devices.wifi.lightstrip.TapoLightStripHandler;
 import org.openhab.binding.tapocontrol.internal.devices.wifi.socket.TapoSocketHandler;
 import org.openhab.binding.tapocontrol.internal.devices.wifi.socket.TapoSocketStripHandler;
+import org.openhab.binding.tapocontrol.internal.devices.wifi.wallswitch.TapoWallSwitchHandler;
 import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
@@ -121,6 +122,8 @@ public class TapoControlHandlerFactory extends BaseThingHandlerFactory {
             return new TapoSocketHandler(thing);
         } else if (SUPPORTED_SOCKET_STRIP_UIDS.contains(thingTypeUID)) {
             return new TapoSocketStripHandler(thing);
+        } else if (SUPPORTED_WALL_SWITCH_UIDS.contains(thingTypeUID)) {
+            return new TapoWallSwitchHandler(thing);
         } else if (SUPPORTED_WHITE_BULB_UIDS.contains(thingTypeUID)) {
             return new TapoBulbHandler(thing, stateDescriptionProvider);
         } else if (SUPPORTED_COLOR_BULB_UIDS.contains(thingTypeUID)) {

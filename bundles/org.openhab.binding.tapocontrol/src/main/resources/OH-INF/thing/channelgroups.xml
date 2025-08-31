@@ -67,6 +67,15 @@
 		</channels>
 	</channel-group-type>
 
+	<!-- Switch Channel Type -->
+	<channel-group-type id="switch">
+		<label>Switch</label>
+		<description>Tapo Smart Switch</description>
+		<channels>
+			<channel id="output" typeId="outputChannel"/>
+		</channels>
+	</channel-group-type>
+
 	<!-- Light-Bulb Channel Type -->
 	<channel-group-type id="lightBulb">
 		<label>Light Bulb</label>
