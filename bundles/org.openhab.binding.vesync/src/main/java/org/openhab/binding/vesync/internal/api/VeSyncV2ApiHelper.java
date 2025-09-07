@@ -41,6 +41,7 @@ import org.openhab.binding.vesync.internal.dto.requests.VeSyncAuthenticatedReque
 import org.openhab.binding.vesync.internal.dto.requests.VeSyncLoginCredentials;
 import org.openhab.binding.vesync.internal.dto.requests.VeSyncRequestManagedDeviceBypassV2;
 import org.openhab.binding.vesync.internal.dto.requests.VeSyncRequestManagedDevicesPage;
+import org.openhab.binding.vesync.internal.dto.requests.VeSyncRequestToken;
 import org.openhab.binding.vesync.internal.dto.responses.VeSyncLoginResponse;
 import org.openhab.binding.vesync.internal.dto.responses.VeSyncManagedDeviceBase;
 import org.openhab.binding.vesync.internal.dto.responses.VeSyncManagedDevicesPage;
@@ -247,6 +248,16 @@ public class VeSyncV2ApiHelper {
                         VeSyncLoginResponse.class);
                 if (loginResponse != null && loginResponse.isMsgSuccess()) {
                     logger.debug("Login successful");
+                    Request request2 = client
+                            .newRequest(
+                                    "https://smartapi.vesync.eu/user/api/accountManage/v1/loginByAuthorizeCode4Vesync")
+                            .method(HttpMethod.POST).timeout(RESPONSE_TIMEOUT_SEC, TimeUnit.SECONDS);
+                    request2.content(new StringContentProvider(
+                            VeSyncConstants.GSON.toJson(new VeSyncRequestToken(loginResponse.result.authorizeCode))));
+                    response = request2.send();
+                    logger.info("response2 = {}, content = {}", response.getContentAsString(),
+                            VeSyncConstants.GSON.toJson(new VeSyncRequestToken(loginResponse.result.authorizeCode)));
+
                     return loginResponse;
                 } else {
                     throw new AuthenticationException("Invalid / unexpected JSON response from login");

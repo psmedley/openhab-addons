@@ -29,6 +29,10 @@ public class VeSyncLoginResponse extends VeSyncResponse {
         return (result == null) ? null : result.token;
     }
 
+    public String getAuthorizeCode() {
+        return (result == null) ? null : result.authorizeCode;
+    }
+
     public String getAccountId() {
         return (result == null) ? null : result.accountId;
     }

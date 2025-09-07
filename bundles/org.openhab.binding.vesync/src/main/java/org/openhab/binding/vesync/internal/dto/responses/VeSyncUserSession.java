@@ -15,7 +15,7 @@ package org.openhab.binding.vesync.internal.dto.responses;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Contains data about the logged in user - including the accountID and token's used
+ * Contains data about the logged in user - including the accountID and authorization code's used
  * for authenticating other payload's.
  *
  * @implNote See unit test - Result may not be in respone if not authenticated
@@ -23,6 +23,13 @@ import com.google.gson.annotations.SerializedName;
  * @author David Goodyear - Initial contribution
  */
 public class VeSyncUserSession {
+
+    @SerializedName("authorizeCode")
+    public String authorizeCode;
+
+    public String getAuthorizeCode() {
+        return authorizeCode;
+    }
 
     public String token;
 
@@ -51,6 +58,6 @@ public class VeSyncUserSession {
 
     @Override
     public String toString() {
-        return "Data [user=AB" + ", token=" + token + "]";
+        return "Data [user=AB" + ", authorizeCode=" + authorizeCode + "]";
     }
 }

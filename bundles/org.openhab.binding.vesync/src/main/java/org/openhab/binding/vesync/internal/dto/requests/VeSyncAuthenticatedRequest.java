@@ -36,7 +36,7 @@ public class VeSyncAuthenticatedRequest extends VeSyncRequest {
         if (user == null) {
             throw new AuthenticationException("User is not logged in");
         }
-        this.token = user.getToken();
+        // this.token = user.getToken();
         this.accountId = user.getAccountId();
     }
 
@@ -45,6 +45,6 @@ public class VeSyncAuthenticatedRequest extends VeSyncRequest {
             throw new AuthenticationException("User is not logged in");
         }
         this.accountId = userSession.getAccountId();
-        this.token = userSession.getToken();
+        // this.token = userSession.getToken();
     }
 }

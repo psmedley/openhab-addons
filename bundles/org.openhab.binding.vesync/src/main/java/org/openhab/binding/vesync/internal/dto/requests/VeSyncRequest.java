@@ -55,8 +55,8 @@ public class VeSyncRequest {
     @SerializedName("terminalId")
     public String terminalId = "cc15570b8b97e8d8";
 
-    @SerializedName("token")
-    public String token = "";
+    // @SerializedName("token")
+    // public String token = "";
 
     @SerializedName("userCountryCode")
     public String userCountryCode = "DE";
