@@ -27,9 +27,6 @@ public class VeSyncAuthenticatedRequest extends VeSyncRequest {
     @SerializedName("accountID")
     public String accountId;
 
-    @SerializedName("token")
-    public String token;
-
     public VeSyncAuthenticatedRequest() {
         super();
     }

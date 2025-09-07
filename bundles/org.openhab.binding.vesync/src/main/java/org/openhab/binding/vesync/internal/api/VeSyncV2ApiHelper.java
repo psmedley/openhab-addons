@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.vesync.internal.api;
 
-import static org.openhab.binding.vesync.internal.dto.requests.VeSyncProtocolConstants.V1_LOGIN_ENDPOINT;
+import static org.openhab.binding.vesync.internal.dto.requests.VeSyncProtocolConstants.NEW_LOGIN_ENDPOINT;
 import static org.openhab.binding.vesync.internal.dto.requests.VeSyncProtocolConstants.V1_MANAGED_DEVICES_ENDPOINT;
 
 import java.net.HttpURLConnection;
@@ -232,16 +232,16 @@ public class VeSyncV2ApiHelper {
             if (client == null) {
                 throw new AuthenticationException("No HTTP Client");
             }
-            Request request = client.newRequest(V1_LOGIN_ENDPOINT).method(HttpMethod.POST).timeout(RESPONSE_TIMEOUT_SEC,
-                    TimeUnit.SECONDS);
+            Request request = client.newRequest(NEW_LOGIN_ENDPOINT).method(HttpMethod.POST)
+                    .timeout(RESPONSE_TIMEOUT_SEC, TimeUnit.SECONDS);
 
             // No headers for login
             request.content(new StringContentProvider(
                     VeSyncConstants.GSON.toJson(new VeSyncLoginCredentials(username, password))));
 
             request.header(HttpHeader.CONTENT_TYPE, "application/json; utf-8");
-
             ContentResponse response = request.send();
+            logger.info("response = {}", response.getContentAsString());
             if (response.getStatus() == HttpURLConnection.HTTP_OK) {
                 VeSyncLoginResponse loginResponse = VeSyncConstants.GSON.fromJson(response.getContentAsString(),
                         VeSyncLoginResponse.class);

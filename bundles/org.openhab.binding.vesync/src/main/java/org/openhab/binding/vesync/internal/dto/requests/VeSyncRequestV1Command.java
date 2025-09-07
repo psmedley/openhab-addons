@@ -29,10 +29,10 @@ public class VeSyncRequestV1Command extends VeSyncAuthenticatedRequest {
 
     public VeSyncRequestV1Command(final String deviceUuid) {
         // Exclude fields that shouldn't be there by setting to null
-        super.phoneOS = null;
-        super.phoneBrand = null;
+        super.osInfo = null;
+        super.clientInfo = null;
         super.method = null;
-        super.appVersion = null;
+        super.clientVersion = null;
         super.httpMethod = HttpMethod.PUT;
         // Set the required payload parameters
         uuid = deviceUuid;

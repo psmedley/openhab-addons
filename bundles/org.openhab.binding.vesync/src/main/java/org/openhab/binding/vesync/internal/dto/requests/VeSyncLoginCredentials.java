@@ -26,15 +26,10 @@ public class VeSyncLoginCredentials extends VeSyncRequest {
     public String email;
     @SerializedName("password")
     public String passwordMd5;
-    @SerializedName("userType")
-    public String userType;
-    @SerializedName("devToken")
-    public String devToken = "";
 
     public VeSyncLoginCredentials() {
         super();
-        userType = "1";
-        method = "login";
+        method = "authByPWDOrOTM";
     }
 
     public VeSyncLoginCredentials(String email, String password) {

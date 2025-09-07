@@ -489,7 +489,7 @@ public abstract class VeSyncBaseDeviceHandler extends BaseThingHandler {
         VeSyncRequestManagedDeviceBypassV2 readReq = new VeSyncRequestManagedDeviceBypassV2();
         readReq.payload.method = method;
         readReq.payload.data = payload;
-        readReq.deviceId = deviceId;
+        // readReq.deviceId = deviceId;
 
         try {
             if (MARKER_INVALID_DEVICE_KEY.equals(deviceLookupKey)) {

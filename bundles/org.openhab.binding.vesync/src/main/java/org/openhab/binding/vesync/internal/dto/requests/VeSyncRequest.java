@@ -31,23 +31,47 @@ public class VeSyncRequest {
     @SerializedName("acceptLanguage")
     public String acceptLanguage = "en";
 
-    @SerializedName("appVersion")
-    public String appVersion = "2.5.1";
+    // @SerializedName("accountID")
+    // public String accountID = "";
 
-    @SerializedName("phoneBrand")
-    public String phoneBrand = "SM N9005";
+    @SerializedName("authProtocolType")
+    public String authProtocolType = "generic";
 
-    @SerializedName("phoneOS")
-    public String phoneOS = "Android";
+    @SerializedName("clientInfo")
+    public String clientInfo = "SM N9005";
+
+    @SerializedName("clientType")
+    public String clientType = "vesyncApp";
+
+    @SerializedName("clientVersion")
+    public String clientVersion = "VeSync 5.6.60";
+
+    @SerializedName("debugMode")
+    public boolean debugMode = false;
+
+    @SerializedName("osInfo")
+    public String osInfo = "Android";
+
+    @SerializedName("terminalId")
+    public String terminalId = "cc15570b8b97e8d8";
+
+    @SerializedName("token")
+    public String token = "";
+
+    @SerializedName("userCountryCode")
+    public String userCountryCode = "DE";
+
+    @SerializedName("appID")
+    public String appID = "4c93ee2e";
+
+    @SerializedName("sourceAppID")
+    public String sourceAppID = "4c93ee2e";
 
     @SerializedName("traceId")
     public String traceId = "";
 
     @SerializedName("method")
     public String method;
-
-    @SerializedName("deviceId")
-    public String deviceId;
 
     public VeSyncRequest() {
         traceId = String.valueOf(System.currentTimeMillis());
