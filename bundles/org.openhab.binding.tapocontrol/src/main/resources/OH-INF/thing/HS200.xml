@@ -12,7 +12,6 @@
 
 		<label>HS200 Series Switch</label>
 		<description>Tapo Smart Switch</description>
-		<semantic-equipment-tag>Lightbulb</semantic-equipment-tag>
 		<channel-groups>
 			<channel-group id="actuator" typeId="switch"/>
 			<channel-group id="device" typeId="deviceState"/>
