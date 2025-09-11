@@ -31,11 +31,11 @@ public class VeSyncRequest {
     @SerializedName("acceptLanguage")
     public String acceptLanguage = "en";
 
-    // @SerializedName("accountID")
-    // public String accountID = "";
+    @SerializedName("accountID")
+    public String accountID = "";
 
-    @SerializedName("authProtocolType")
-    public String authProtocolType = "generic";
+    // @SerializedName("authProtocolType")
+    // public String authProtocolType = "generic";
 
     @SerializedName("clientInfo")
     public String clientInfo = "SM N9005";
@@ -55,17 +55,11 @@ public class VeSyncRequest {
     @SerializedName("terminalId")
     public String terminalId = "cc15570b8b97e8d8";
 
-    // @SerializedName("token")
-    // public String token = "";
+    @SerializedName("token")
+    public String token = "";
 
     @SerializedName("userCountryCode")
     public String userCountryCode = "DE";
-
-    @SerializedName("appID")
-    public String appID = "4c93ee2e";
-
-    @SerializedName("sourceAppID")
-    public String sourceAppID = "4c93ee2e";
 
     @SerializedName("traceId")
     public String traceId = "";

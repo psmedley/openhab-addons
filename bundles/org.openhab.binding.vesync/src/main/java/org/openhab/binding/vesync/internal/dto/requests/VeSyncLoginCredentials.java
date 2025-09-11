@@ -27,6 +27,15 @@ public class VeSyncLoginCredentials extends VeSyncRequest {
     @SerializedName("password")
     public String passwordMd5;
 
+    @SerializedName("authProtocolType")
+    public String authProtocolType;
+
+    @SerializedName("appID")
+    public String appID;
+
+    @SerializedName("sourceAppID")
+    public String sourceAppID;
+
     public VeSyncLoginCredentials() {
         super();
         method = "authByPWDOrOTM";
@@ -36,5 +45,8 @@ public class VeSyncLoginCredentials extends VeSyncRequest {
         this();
         this.email = email;
         this.passwordMd5 = password;
+        this.authProtocolType = "generic";
+        this.appID = "4c93ee2e";
+        this.sourceAppID = "4c93ee2e";
     }
 }

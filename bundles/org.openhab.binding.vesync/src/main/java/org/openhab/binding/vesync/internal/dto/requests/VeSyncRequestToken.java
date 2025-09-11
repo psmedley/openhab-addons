@@ -24,10 +24,12 @@ public class VeSyncRequestToken extends VeSyncRequest {
 
     @SerializedName("authorizeCode")
     public String authorizeCode;
-    @SerializedName("bizToken")
-    public String bizToken;
-    @SerializedName("regionChange")
-    public String regionChange;
+    @SerializedName("emailSubscriptions")
+    boolean emailSubscriptions = false;
+    // @SerializedName("bizToken")
+    // public String bizToken;
+    // @SerializedName("regionChange")
+    // public String regionChange;
 
     public VeSyncRequestToken() {
         super();
@@ -37,7 +39,7 @@ public class VeSyncRequestToken extends VeSyncRequest {
     public VeSyncRequestToken(String authorizeCode) {
         this();
         this.authorizeCode = authorizeCode;
-        this.bizToken = "";
-        this.regionChange = "";
+        // this.bizToken = "";
+        // this.regionChange = "";
     }
 }
