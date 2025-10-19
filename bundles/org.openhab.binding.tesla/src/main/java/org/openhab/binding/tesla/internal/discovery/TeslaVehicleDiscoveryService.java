@@ -68,7 +68,7 @@ public class TeslaVehicleDiscoveryService extends AbstractThingHandlerDiscoveryS
     public void vehicleFound(Vehicle vehicle, @Nullable VehicleConfig vehicleConfig) {
         ThingTypeUID type = vehicleConfig == null ? TeslaBindingConstants.THING_TYPE_VEHICLE
                 : vehicleConfig.identifyModel();
-        if (type != null) {
+        if (type != null && vehicle.vin != null) {
             logger.debug("Found a {} vehicle", type.getId());
             ThingUID thingUID = new ThingUID(type, thingHandler.getThing().getUID(), vehicle.vin);
             DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withLabel(vehicle.displayName)
