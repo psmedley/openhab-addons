@@ -42,7 +42,11 @@
 				<type>teslascope:charge-limit-soc-std</type>
 			</update-channel>
 		</instruction-set>
-
+		<instruction-set targetVersion="3">
+			<add-channel id="vent-windows">
+				<type>teslascope:vent-windows</type>
+			</add-channel>
+		</instruction-set>
 	</thing-type>
 
 </update:update-descriptions>

@@ -116,6 +116,7 @@ public class TeslascopeBindingConstants {
     public static final String CHANNEL_TIME_TO_FULL_CHARGE = "time-to-full-charge";
     public static final String CHANNEL_USABLE_BATTERY_LEVEL = "usable-battery-level";
     public static final String CHANNEL_VALET_MODE = "valet-mode";
+    public static final String CHANNEL_VENT_WINDOWS = "vent-windows";
     public static final String CHANNEL_WIPER_BLADE_HEATER = "wiper-blade-heater";
 
     public static final Set<ThingTypeUID> BRIDGE_THING_TYPES_UIDS = Set.of(TESLASCOPE_ACCOUNT);

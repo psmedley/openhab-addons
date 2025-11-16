@@ -162,6 +162,12 @@ public class TeslascopeVehicleHandler extends BaseThingHandler {
                     sentry(onOffCommand == OnOffType.ON);
                 }
                 break;
+            case TeslascopeBindingConstants.CHANNEL_VENT_WINDOWS:
+                if (command instanceof OnOffType onOffCommand) {
+                    ventWindows(onOffCommand == OnOffType.ON);
+                    return;
+                }
+                break;
             default:
                 logger.debug("Received command ({}) of wrong type for thing '{}' on channel {}", command,
                         thing.getUID().getAsString(), channelUID.getId());
@@ -434,5 +440,9 @@ public class TeslascopeVehicleHandler extends BaseThingHandler {
 
     protected void setChargeLimit(QuantityType<?> chargeLimit) {
         sendCommand(config.publicID, "setChargeLimit", "&limit=" + chargeLimit.toString().replace(" %", ""));
+    }
+
+    protected void ventWindows(boolean b) {
+        sendCommand(config.publicID, b ? "ventWindows" : "closeWindows");
     }
 }

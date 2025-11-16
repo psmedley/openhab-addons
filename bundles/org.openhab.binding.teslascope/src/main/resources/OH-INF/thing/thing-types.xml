@@ -111,11 +111,12 @@
 			<channel id="tpms-soft-warning-rr" typeId="tpms-soft-warning-rr"/>
 			<channel id="usable-battery-level" typeId="usable-battery-level"/>
 			<channel id="valet-mode" typeId="valet-mode"/>
+			<channel id="vent-windows" typeId="vent-windows"/>
 			<channel id="wiper-blade-heater" typeId="wiper-blade-heater"/>
 		</channels>
 
 		<properties>
-			<property name="thingTypeVersion">2</property>
+			<property name="thingTypeVersion">3</property>
 		</properties>
 
 		<config-description>
@@ -669,6 +670,11 @@
 		<item-type>Switch</item-type>
 		<label>Valet Mode</label>
 		<description>Enable or disable Valet Mode</description>
+	</channel-type>
+	<channel-type id="vent-windows" advanced="true">
+		<item-type>Switch</item-type>
+		<label>Vent Windows</label>
+		<description>Enable or disable Window Venting (On = Venting; Off = Closed)</description>
 	</channel-type>
 	<channel-type id="wiper-blade-heater" advanced="true">
 		<item-type>Switch</item-type>
