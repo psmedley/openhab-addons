@@ -130,6 +130,7 @@ Additionally, these advanced channels are available (not all are available on al
 | tpms-soft-warning-rr        | Switch                   | Tyre Pressure Soft Warning RR | Tyre Pressure Soft Warning Rear Right                                                                    |
 | usable-battery-level        | Number                   | Usable Battery Level          | Indicates the % of battery that can be used for vehicle functions like driving                           |
 | valet-mode                  | Switch                   | Valet Mode                    | Enable or disable Valet Mode                                                                             |
+| vent-windows                | Switch                   | Vent Windows                  | Enable or disable Window Venting (On = Vent, Off = No Venting)                                           |
 | wiper-blade-heater          | Switch                   | Wiper Blade Heater            | Indicates if the wiper blade heater is switched on                                                       |
 
 ## Full Example
