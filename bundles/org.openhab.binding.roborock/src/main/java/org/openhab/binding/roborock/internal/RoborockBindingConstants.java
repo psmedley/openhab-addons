@@ -33,6 +33,7 @@ public class RoborockBindingConstants {
     public static final ThingTypeUID ROBOROCK_VACUUM = new ThingTypeUID(BINDING_ID, "vacuum");
 
     public static final String SALT = "TXdfu$jyZ#TZHsg4";
+    public static final String B01_HASH = "5wwh9ikChRjASpMU8cxg7o1d2E";
     public static final int AES_BLOCK_SIZE = 16;
 
     // Constants used by RoborockWebTargets
@@ -56,6 +57,7 @@ public class RoborockBindingConstants {
     public static final String AES_ECB_PADDING = "AES/ECB/PKCS5Padding";
     public static final String AES_CBC_NO_PADDING = "AES/CBC/NoPadding";
     public static final String VERSION_1_0 = "1.0";
+    public static final String VERSION_B01 = "B01";
     public static final int SEQ_OFFSET = 3;
     public static final int RANDOM_OFFSET = 7;
     public static final int TIMESTAMP_OFFSET = 11;

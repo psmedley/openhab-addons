@@ -16,6 +16,7 @@ import static org.openhab.binding.roborock.internal.RoborockBindingConstants.*;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -28,6 +29,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -80,6 +82,26 @@ public final class ProtocolUtils {
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException
                 | BadPaddingException e) {
             throw new RoborockException("Failed to encrypt data using AES/ECB/PKCS5Padding.", e);
+        }
+    }
+
+    public static byte[] decryptB01(byte[] payload, byte[] nonce, String key) throws RoborockException {
+        try {
+            byte[] aesKeyBytes = md5bin(key);
+            String nonceHex = String.format("%08x", nonce);
+            String fullHash = md5Hex(nonceHex + B01_HASH);
+            String ivString = fullHash.substring(9, 25);
+            byte[] ivBytes = ivString.getBytes(StandardCharsets.UTF_8);
+
+            SecretKeySpec keySpec = new SecretKeySpec(aesKeyBytes, "AES");
+            IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+            return cipher.doFinal(payload);
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | NoSuchPaddingException
+                | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            throw new RoborockException("Failed to decrypt data using AES/CBC/PKCS5Padding.", e);
         }
     }
 
@@ -204,7 +226,7 @@ public final class ProtocolUtils {
      * @param localKey The local key for decryption.
      * @return The decrypted payload as a string, or an empty string on decryption failure.
      */
-    private static String handleDataProtocol(byte[] message, MessageHeader header, String localKey) {
+    private static String handleDataProtocolV1(byte[] message, MessageHeader header, String localKey) {
         int payloadStart = HEADER_LENGTH_WITHOUT_CRC;
         int payloadEnd = payloadStart + header.payloadLen;
 
@@ -217,6 +239,35 @@ public final class ProtocolUtils {
         String encryptionKey = encodeTimestamp(header.timestamp) + localKey + SALT;
         try {
             byte[] decryptedResult = decrypt(payload, encryptionKey);
+            return new String(decryptedResult, StandardCharsets.UTF_8);
+        } catch (RoborockException e) {
+            LOGGER.debug("Exception decrypting payload for protocol 102: {}", e.getMessage(), e);
+            return "";
+        }
+    }
+
+    /**
+     * Handles messages with protocol B01 (data payload).
+     * Decrypts the payload and returns the result as a UTF-8 string.
+     *
+     * @param message The full message byte array.
+     * @param header The parsed message header.
+     * @param localKey The local key for decryption.
+     * @return The decrypted payload as a string, or an empty string on decryption failure.
+     */
+    private static String handleDataProtocolB01(byte[] message, MessageHeader header, byte[] nonce, String localKey) {
+        int payloadStart = HEADER_LENGTH_WITHOUT_CRC;
+        int payloadEnd = payloadStart + header.payloadLen;
+
+        if (payloadEnd > message.length - CRC_LENGTH) {
+            return "";
+        }
+
+        byte[] payload = Arrays.copyOfRange(message, payloadStart, payloadEnd);
+
+        String encryptionKey = encodeTimestamp(header.timestamp) + localKey + SALT;
+        try {
+            byte[] decryptedResult = decryptB01(payload, nonce, encryptionKey);
             return new String(decryptedResult, StandardCharsets.UTF_8);
         } catch (RoborockException e) {
             LOGGER.debug("Exception decrypting payload for protocol 102: {}", e.getMessage(), e);
@@ -240,8 +291,8 @@ public final class ProtocolUtils {
         }
 
         MessageHeader header = parseMessageHeader(message);
-        if (!VERSION_1_0.equals(header.version)) {
-            LOGGER.debug("Received message version is not 1.0: {}", header.version);
+        if ((!VERSION_1_0.equals(header.version)) || (!VERSION_B01.equals(header.version))) {
+            LOGGER.debug("Received message version is not 1.0 or B01: {}", header.version);
             return "";
         }
 
@@ -255,7 +306,11 @@ public final class ProtocolUtils {
             case 301:
                 return handleImageProtocol(message, header, nonce);
             case 102:
-                return handleDataProtocol(message, header, localKey);
+                if (VERSION_1_0.equals(header.version)) {
+                    return handleDataProtocolV1(message, header, localKey);
+                } else {
+                    return handleDataProtocolB01(message, header, nonce, localKey);
+                }
             default:
                 LOGGER.debug("Unknown protocol received: {}", header.protocol);
                 return "";
