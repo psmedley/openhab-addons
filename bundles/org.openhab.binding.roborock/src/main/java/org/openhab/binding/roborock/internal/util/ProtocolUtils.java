@@ -87,6 +87,30 @@ public final class ProtocolUtils {
 
     public static byte[] decryptB01(byte[] payload, byte[] nonce, String key) throws RoborockException {
         try {
+            String nonceHex = String.format("%08x", nonce);
+            String rawIvString = nonceHex + B01_HASH;
+
+            String md5Full = md5Hex(rawIvString);
+            String ivSubstring = md5Full.substring(9, 25);
+
+            byte[] ivBytes = ivSubstring.getBytes(StandardCharsets.UTF_8);
+            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+
+            SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "AES");
+            IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
+
+            Cipher decipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            decipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+
+            return decipher.doFinal(payload);
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | NoSuchPaddingException
+                | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            throw new RoborockException("Failed to decrypt data using AES/CBC/PKCS5Padding.", e);
+        }
+    }
+
+    public static byte[] encryptB01(byte[] payload, byte[] nonce, String key) throws RoborockException {
+        try {
             byte[] aesKeyBytes = md5bin(key);
             String nonceHex = String.format("%08x", nonce);
             String fullHash = md5Hex(nonceHex + B01_HASH);
@@ -101,7 +125,7 @@ public final class ProtocolUtils {
             return cipher.doFinal(payload);
         } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | NoSuchPaddingException
                 | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-            throw new RoborockException("Failed to decrypt data using AES/CBC/PKCS5Padding.", e);
+            throw new RoborockException("Failed to encrypt data using AES/CBC/PKCS5Padding.", e);
         }
     }
 
