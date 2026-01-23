@@ -473,6 +473,11 @@ public class RoborockAccountHandler extends BaseBridgeHandler implements MqttCal
                 localMqttClient.publish(topic, message);
                 return id;
             } catch (MqttException e) {
+                if (e.getReasonCode() == MqttException.REASON_CODE_CLIENT_NOT_CONNECTED) {
+                    logger.error("MQTT publish failed, client not connected", e);
+                    disconnectMqttClient();
+                    return -1;
+                }
                 logger.error("MQTT publish failed", e);
                 return -1;
             }
