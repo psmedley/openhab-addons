@@ -386,6 +386,10 @@ public class RoborockAccountHandler extends BaseBridgeHandler implements MqttCal
     @Override
     public void connectionLost(@Nullable Throwable cause) {
         // Additional logic can be placed here if specific actions are needed on disconnect
+        if (cause instanceof java.net.SocketException) {
+            logger.debug("Network layer failure: {}", cause.getMessage());
+            disconnectMqttClient();
+        }
     }
 
     @Override
