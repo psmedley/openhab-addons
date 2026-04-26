@@ -417,9 +417,9 @@ public final class ProtocolUtils {
                         return new JsonPayloadResponse(payload);
                     }
                 } else {
-                    String payload = handleDataProtocolB01(message, header, localKey);
+                    String payload = handleDataProtocolB01(message, header, nonce, localKey);
                     if (!payload.isEmpty()) {
-                        return new JsonPayloadResponseB01(payload);
+                        return new JsonPayloadResponse(payload);
                     }
                 }
                 return new IgnoredResponse();
