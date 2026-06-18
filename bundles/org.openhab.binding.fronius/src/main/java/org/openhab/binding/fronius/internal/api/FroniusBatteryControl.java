@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -36,6 +36,7 @@ import org.openhab.binding.fronius.internal.api.dto.inverter.batterycontrol.Time
 import org.openhab.binding.fronius.internal.api.dto.inverter.batterycontrol.WeekdaysRecord;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.unit.Units;
+import org.openhab.core.thing.firmware.types.SemverVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +64,9 @@ public class FroniusBatteryControl {
 
     private final Logger logger = LoggerFactory.getLogger(FroniusBatteryControl.class);
     private final Gson gson = new Gson();
+    private final FroniusHttpUtil httpUtil;
     private final HttpClient httpClient;
+    private final SemverVersion firmwareVersion;
     private final URI baseUri;
     private final String username;
     private final String password;
@@ -72,19 +75,33 @@ public class FroniusBatteryControl {
 
     /**
      * Creates a new instance of {@link FroniusBatteryControl}.
-     * 
+     *
+     * @param httpUtil the HTTP utility to use for bridge-scoped request coordination
      * @param httpClient the HTTP client to use
-     * @param baseUri the base URI of the Fronius hybrid inverter, MUST NOT end with a slash
+     * @param firmwareVersion the firmware version of the inverter
+     * @param scheme http or https
+     * @param hostname the hostname or IP address of the inverter
      * @param username the username for the inverter Web UI
      * @param password the password for the inverter Web UI
      */
-    public FroniusBatteryControl(HttpClient httpClient, URI baseUri, String username, String password) {
+    public FroniusBatteryControl(FroniusHttpUtil httpUtil, HttpClient httpClient, SemverVersion firmwareVersion,
+            String scheme, String hostname, String username, String password) {
+        this.httpUtil = httpUtil;
         this.httpClient = httpClient;
-        this.baseUri = baseUri;
+        this.firmwareVersion = firmwareVersion;
+        this.baseUri = getBaseUri(firmwareVersion, scheme, hostname);
         this.username = username;
         this.password = password;
         this.timeOfUseUri = URI.create(baseUri + TIME_OF_USE_ENDPOINT);
         this.batteriesUri = URI.create(baseUri + BATTERIES_ENDPOINT);
+    }
+
+    private static URI getBaseUri(SemverVersion firmwareVersion, String scheme, String hostname) {
+        String apiPrefix = "";
+        if (firmwareVersion.isGreaterThanOrEqualTo(SemverVersion.fromString("1.36.0"))) {
+            apiPrefix = "/api";
+        }
+        return URI.create(String.format("%s://%s%s", scheme, hostname, apiPrefix));
     }
 
     /**
@@ -96,12 +113,12 @@ public class FroniusBatteryControl {
      */
     private TimeOfUseRecords getTimeOfUse() throws FroniusCommunicationException, FroniusUnauthorizedException {
         // Login and get the auth header for the next request
-        String authHeader = FroniusConfigAuthUtil.login(httpClient, baseUri, username, password, HttpMethod.GET,
-                timeOfUseUri.getPath(), API_TIMEOUT);
+        String authHeader = FroniusConfigAuthUtil.login(httpClient, firmwareVersion, baseUri, username, password,
+                HttpMethod.GET, timeOfUseUri.getPath(), API_TIMEOUT);
         Properties headers = new Properties();
         headers.put(HttpHeader.AUTHORIZATION.asString(), authHeader);
         // Get the time of use settings
-        String response = FroniusHttpUtil.executeUrl(HttpMethod.GET, timeOfUseUri.toString(), headers, null, null,
+        String response = httpUtil.executeUrl(HttpMethod.GET, timeOfUseUri.toString(), headers, null, null,
                 API_TIMEOUT);
         logger.trace("Time of Use settings read successfully");
 
@@ -128,14 +145,14 @@ public class FroniusBatteryControl {
     private void setTimeOfUse(TimeOfUseRecords records)
             throws FroniusCommunicationException, FroniusUnauthorizedException {
         // Login and get the auth header for the next request
-        String authHeader = FroniusConfigAuthUtil.login(httpClient, baseUri, username, password, HttpMethod.POST,
-                timeOfUseUri.getPath(), API_TIMEOUT);
+        String authHeader = FroniusConfigAuthUtil.login(httpClient, firmwareVersion, baseUri, username, password,
+                HttpMethod.POST, timeOfUseUri.getPath(), API_TIMEOUT);
         Properties headers = new Properties();
         headers.put(HttpHeader.AUTHORIZATION.asString(), authHeader);
 
         // Set the time of use settings
         String json = gson.toJson(records);
-        String responseString = FroniusHttpUtil.executeUrl(HttpMethod.POST, timeOfUseUri.toString(), headers,
+        String responseString = httpUtil.executeUrl(HttpMethod.POST, timeOfUseUri.toString(), headers,
                 new ByteArrayInputStream(json.getBytes()), "application/json", API_TIMEOUT);
         @Nullable
         PostConfigResponse response = gson.fromJson(responseString, PostConfigResponse.class);
@@ -148,7 +165,7 @@ public class FroniusBatteryControl {
 
     /**
      * Adds a schedule to the time of use settings of the Fronius hybrid inverter.
-     * 
+     *
      * @param from start time of the forced charge period
      * @param until end time of the forced charge period
      * @param scheduleType the type of the schedule
@@ -156,7 +173,7 @@ public class FroniusBatteryControl {
      * @throws FroniusCommunicationException when an error occurs during communication with the inverter
      * @throws FroniusUnauthorizedException when the login fails due to invalid credentials
      */
-    private void addSchedule(LocalTime from, LocalTime until, ScheduleType scheduleType, QuantityType<Power> power)
+    public void addSchedule(LocalTime from, LocalTime until, ScheduleType scheduleType, QuantityType<Power> power)
             throws FroniusCommunicationException, FroniusUnauthorizedException {
         TimeOfUseRecords currentTimeOfUse = getTimeOfUse();
         TimeOfUseRecord[] timeOfUse = new TimeOfUseRecord[currentTimeOfUse.records().length + 1];
@@ -240,7 +257,7 @@ public class FroniusBatteryControl {
 
     /**
      * Prevents the battery from charging right now.
-     * 
+     *
      * @throws FroniusCommunicationException when an error occurs during communication with the inverter
      * @throws FroniusUnauthorizedException when the login fails due to invalid credentials
      */
@@ -251,7 +268,7 @@ public class FroniusBatteryControl {
 
     /**
      * Prevents the battery from charging during a specific time period.
-     * 
+     *
      * @param from start time of the prevented charging period
      * @param until end time of the prevented charging period
      * @throws FroniusCommunicationException when an error occurs during communication with the inverter
@@ -264,7 +281,7 @@ public class FroniusBatteryControl {
 
     /**
      * Forces the battery to discharge right now with the specified power.
-     * 
+     *
      * @param power the power to discharge the battery with
      * @throws FroniusCommunicationException when an error occurs during communication with the inverter
      * @throws FroniusUnauthorizedException when the login fails due to invalid credentials
@@ -277,7 +294,7 @@ public class FroniusBatteryControl {
 
     /**
      * Forces the battery to discharge during a specific time period with the specified power.
-     * 
+     *
      * @param from start time of the prevented charging period
      * @param until end time of the prevented charging period
      * @param power the power to discharge the battery with
@@ -304,14 +321,14 @@ public class FroniusBatteryControl {
         }
 
         // Login and get the auth header for the next request
-        String authHeader = FroniusConfigAuthUtil.login(httpClient, baseUri, username, password, HttpMethod.POST,
-                batteriesUri.getPath(), API_TIMEOUT);
+        String authHeader = FroniusConfigAuthUtil.login(httpClient, firmwareVersion, baseUri, username, password,
+                HttpMethod.POST, batteriesUri.getPath(), API_TIMEOUT);
         Properties headers = new Properties();
         headers.put(HttpHeader.AUTHORIZATION.asString(), authHeader);
 
         // Set the setting
         String json = gson.toJson(Map.of(BACKUP_RESERVED_CAPACITY_PARAMETER, percent));
-        String responseString = FroniusHttpUtil.executeUrl(HttpMethod.POST, batteriesUri.toString(), headers,
+        String responseString = httpUtil.executeUrl(HttpMethod.POST, batteriesUri.toString(), headers,
                 new ByteArrayInputStream(json.getBytes()), "application/json", API_TIMEOUT);
         @Nullable
         PostConfigResponse response = gson.fromJson(responseString, PostConfigResponse.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -78,10 +78,15 @@ public class ShellyThingCreatorTest {
                 Arguments.of("shellyplug-u1-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUG), //
                 Arguments.of("shellyplugu1-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUGU1), //
                 Arguments.of("shellyplusplug-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGS), //
+                Arguments.of("shellyplusplugs-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of("shellyplugsg3-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGS), //
+                Arguments.of("shellyplugmg3-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of("shellyplugus-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGUS), //
+                Arguments.of("shellyplugusg4-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUGUSG4), //
+                Arguments.of("shellyplusplugcpm-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGCPM), //
                 Arguments.of("shellydimmer-" + DEVICE_ID, "", THING_TYPE_SHELLYDIMMER), //
                 Arguments.of("shellydimmer2-" + DEVICE_ID, "", THING_TYPE_SHELLYDIMMER2), //
+                Arguments.of("shellyprodm2pm-" + DEVICE_ID, "", THING_TYPE_SHELLYPRODM2PM), //
                 Arguments.of("shellyem-" + DEVICE_ID, "", THING_TYPE_SHELLYEM), //
                 Arguments.of("shellyem3-" + DEVICE_ID, "", THING_TYPE_SHELLY3EM), //
                 Arguments.of("shellyrgbw2-" + DEVICE_ID, "color", THING_TYPE_SHELLYRGBW2_COLOR), //
@@ -111,10 +116,12 @@ public class ShellyThingCreatorTest {
                 Arguments.of("shellypro3em400-" + DEVICE_ID, "", THING_TYPE_SHELLYPRO3EM400), //
 
                 // Shelly BLU
-                Arguments.of("shellyblubutton-" + DEVICE_ID, "", THING_TYPE_SHELLYBLUBUTTON), //
+                Arguments.of("shellyblubutton-" + DEVICE_ID, "", THING_TYPE_SHELLYBLUBUTTON1), //
                 Arguments.of("shellybluht-" + DEVICE_ID, "", THING_TYPE_SHELLYBLUHT), //
                 Arguments.of("shellybludw-" + DEVICE_ID, "", THING_TYPE_SHELLYBLUDW), //
-                Arguments.of("shellyblumotion-" + DEVICE_ID, "", THING_TYPE_SHELLYBLUMOTION) //
+                Arguments.of("shellyblumotion-" + DEVICE_ID, "", THING_TYPE_SHELLYBLUMOTION), //
+                Arguments.of("shellybludistance-" + DEVICE_ID, "", THING_TYPE_SHELLYBLUDISTANCE), //
+                Arguments.of("shellybluremote-" + DEVICE_ID, "", THING_TYPE_SHELLYBLUREMOTE) //
         );
     }
 
@@ -187,10 +194,13 @@ public class ShellyThingCreatorTest {
                 Arguments.of(SHELLYDT_PLUSSHUTTER, "", THING_TYPE_SHELLYPLUSSHUTTER), //
                 Arguments.of(SHELLYDT_PLUSPLUGS, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of(SHELLYDT_PLUSPLUGSG3, "", THING_TYPE_SHELLYPLUSPLUGS), //
+                Arguments.of(SHELLYDT_PLUSPLUGMG3, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of(SHELLYDT_PLUSPLUGSAZ, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of(SHELLYDT_PLUSPLUGIT, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of(SHELLYDT_PLUSPLUGUK, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of(SHELLYDT_PLUSPLUGUS, "", THING_TYPE_SHELLYPLUSPLUGUS), //
+                Arguments.of(SHELLYDT_PLUSPLUGUSG4, "", THING_TYPE_SHELLYPLUGUSG4), //
+                Arguments.of(SHELLYDT_PLUSPLUGCPM, "", THING_TYPE_SHELLYPLUSPLUGCPM), //
                 Arguments.of(SHELLYDT_PLUSPLUGOUTDOORSG3, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of(SHELLYDT_PLUSSTRIP, "", THING_TYPE_SHELLYPLUSSTRIP), //
                 Arguments.of(SHELLYDT_PLUSI4DC, "", THING_TYPE_SHELLYPLUSI4DC), //
@@ -204,6 +214,7 @@ public class ShellyThingCreatorTest {
                 Arguments.of(SHELLYDT_PLUSDIMMER10V, "", THING_TYPE_SHELLYPLUSDIMMER10V), //
                 Arguments.of(SHELLYDT_PLUSDIMMER0110VG3, "", THING_TYPE_SHELLYPLUSDIMMER10V), //
                 Arguments.of(SHELLYDT_PLUSDIMMERG3, "", THING_TYPE_SHELLYPLUSDIMMER), //
+                Arguments.of(SHELLYDT_PRODM2PM, "", THING_TYPE_SHELLYPRODM2PM), //
                 Arguments.of(SHELLYDT_PLUSEM, "", THING_TYPE_SHELLYPLUSEM), //
                 Arguments.of(SHELLYDT_PLUS3EM63, "", THING_TYPE_SHELLYPLUS3EM63), //
                 Arguments.of(SHELLYDT_PLUSRGBWPM, "", THING_TYPE_SHELLYPLUSRGBWPM),
@@ -249,15 +260,22 @@ public class ShellyThingCreatorTest {
                 Arguments.of(SHELLYDT_PRO3EM400, "", THING_TYPE_SHELLYPRO3EM400), //
 
                 // BLU Series
-                Arguments.of(SHELLYDT_BLUBUTTON1, "", THING_TYPE_SHELLYBLUBUTTON), //
+                Arguments.of(SHELLYDT_BLUBUTTON1, "", THING_TYPE_SHELLYBLUBUTTON1), //
+                Arguments.of(SHELLYDT_BLUTOUGHZB, "", THING_TYPE_SHELLYBLUBUTTON1), //
+                Arguments.of(SHELLYDT_BLUWALLSWITCH4, "", THING_TYPE_SHELLYBLUWALLSWITCH4), //
+                Arguments.of(SHELLYDT_BLURCBUTTON4, "", THING_TYPE_SHELLYBLURCBUTTON4), //
                 Arguments.of(SHELLYDT_BLUHT, "", THING_TYPE_SHELLYBLUHT), //
+                Arguments.of(SHELLYDT_BLUHTZB, "", THING_TYPE_SHELLYBLUHT), //
                 Arguments.of(SHELLYDT_BLUDW, "", THING_TYPE_SHELLYBLUDW), //
                 Arguments.of(SHELLYDT_BLUMOTION, "", THING_TYPE_SHELLYBLUMOTION), //
+                Arguments.of(SHELLYDT_BLUDISTANCE, "", THING_TYPE_SHELLYBLUDISTANCE), //
+                Arguments.of(SHELLYDT_BLUREMOTE, "", THING_TYPE_SHELLYBLUREMOTE), //
 
-                Arguments.of(SHELLYDT_BLUCLASS_BUTTON, "", THING_TYPE_SHELLYBLUBUTTON), //
+                Arguments.of(SHELLYDT_BLUCLASS_BUTTON, "", THING_TYPE_SHELLYBLUBUTTON1), //
                 Arguments.of(SHELLYDT_BLUCLASS_HT, "", THING_TYPE_SHELLYBLUHT), //
                 Arguments.of(SHELLYDT_BLUCLASS_DW, "", THING_TYPE_SHELLYBLUDW), //
                 Arguments.of(SHELLYDT_BLUCLASS_MOTION, "", THING_TYPE_SHELLYBLUMOTION), //
+                Arguments.of(SHELLYDT_BLUCLASS_DISTANCE, "", THING_TYPE_SHELLYBLUDISTANCE), //
 
                 // Wall displays
                 Arguments.of(SHELLYDT_PLUSWALLDISPLAY, "", THING_TYPE_SHELLYPLUSWALLDISPLAY));
@@ -309,6 +327,7 @@ public class ShellyThingCreatorTest {
                 Arguments.of("SBBT-02C-03D", "001A2B3C4D5E", "shellyblubutton-001a2b3c4d5e"), //
                 Arguments.of("SBDW", "001A2B3C4D5E", "shellybludw-001a2b3c4d5e"), //
                 Arguments.of("SBMO", "001A2B3C4D5E", "shellyblumotion-001a2b3c4d5e"), //
+                Arguments.of("SBDI", "001A2B3C4D5E", "shellybludistance-001a2b3c4d5e"), //
                 Arguments.of("SBHT", "001A2B3C4D5E", "shellybluht-001a2b3c4d5e"), //
                 Arguments.of("SBHT", "00:1A:2B:3C:4D:5E", "shellybluht-001a2b3c4d5e"));
     }
