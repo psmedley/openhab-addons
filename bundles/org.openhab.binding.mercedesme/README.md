@@ -104,13 +104,13 @@ If you encounter problems with this binding follow the instructions from [Troubl
 
 State
 
-- 0 : Locked
-- 1 : Unlocked
+- 2 : Locked
+- 0 : Unlocked
 
 Command
 
-- 0 : Lock
-- 1 : Unlock
+- 2 : Lock
+- 0 : Unlock
 
 Triggers `DOORSLOCK` and `DOORSUNLOCK` from [Command Name Mapping](#command-name-mapping)
 
@@ -391,23 +391,24 @@ Group name: `range`
 
 All channels read-only.
 
-| Channel          | Type                 |  Description                    | bev | hybrid | combustion |
-|------------------|----------------------|---------------------------------|-----|--------|------------|
-| mileage          | Number:Length        |  Total Mileage                  | X   | X      | X          |
-| home-distance    | Number:Length        |  Distance to Home               | X   | X      | X          |
-| soc              | Number:Dimensionless |  Battery State of Charge        | X   | X      |            |
-| charged          | Number:Energy        |  Charged Battery Energy         | X   | X      |            |
-| uncharged        | Number:Energy        |  Uncharged Battery Energy       | X   | X      |            |
-| range-electric   | Number:Length        |  Electric Range                 | X   | X      |            |
-| radius-electric  | Number:Length        |  Electric Radius for Map        | X   | X      |            |
-| fuel-level       | Number:Dimensionless |  Fuel Level in Percent          |     | X      | X          |
-| fuel-remain      | Number:Volume        |  Remaining Fuel                 |     | X      | X          |
-| fuel-open        | Number:Volume        |  Open Fuel Capacity             |     | X      | X          |
-| range-fuel       | Number:Length        |  Fuel Range                     |     | X      | X          |
-| radius-fuel      | Number:Length        |  Fuel Radius for Map            |     | X      | X          |
-| range-hybrid     | Number:Length        |  Hybrid Range                   |     | X      |            |
-| radius-hybrid    | Number:Length        |  Hybrid Radius for Map          |     | X      |            |
-| adblue-level     | Number:Dimensionless |  AdBlue tank level in percent   |     |        | X          |
+| Channel               | Type                 |  Description                    | bev | hybrid | combustion |
+|-----------------------|----------------------|---------------------------------|-----|--------|------------|
+| mileage               | Number:Length        |  Total Mileage                  | X   | X      | X          |
+| home-distance         | Number:Length        |  Distance to Home               | X   | X      | X          |
+| soc                   | Number:Dimensionless |  Battery State of Charge        | X   | X      |            |
+| charged               | Number:Energy        |  Charged Battery Energy         | X   | X      |            |
+| uncharged             | Number:Energy        |  Uncharged Battery Energy       | X   | X      |            |
+| energy-to-max-soc     | Number:Energy        |  Energy to Maximum SoC          | X   | X      |            |
+| range-electric        | Number:Length        |  Electric Range                 | X   | X      |            |
+| radius-electric       | Number:Length        |  Electric Radius for Map        | X   | X      |            |
+| fuel-level            | Number:Dimensionless |  Fuel Level in Percent          |     | X      | X          |
+| fuel-remain           | Number:Volume        |  Remaining Fuel                 |     | X      | X          |
+| fuel-open             | Number:Volume        |  Open Fuel Capacity             |     | X      | X          |
+| range-fuel            | Number:Length        |  Fuel Range                     |     | X      | X          |
+| radius-fuel           | Number:Length        |  Fuel Radius for Map            |     | X      | X          |
+| range-hybrid          | Number:Length        |  Hybrid Range                   |     | X      |            |
+| radius-hybrid         | Number:Length        |  Hybrid Radius for Map          |     | X      |            |
+| adblue-level          | Number:Dimensionless |  AdBlue tank level in percent   |     |        | X          |
 
 Channels with `radius` are just giving a _guess_ which radius can be reached in a map display.
 
@@ -431,7 +432,7 @@ States and controls are depending on your vehicle capabilities.
 | power               | Number:Power         |  Current Charging Power                | X    |       |
 | end-time            | DateTime             |  Estimated Charging End                | X    |       |
 | program             | Number               |  Selected Charge Program               | X    | X     |
-| max-soc             | Number:Dimensionless |  Charge Target SoC                     | X    | X     |
+| max-soc             | Number:Dimensionless |  Maximum State of Charge               | X    | X     |
 | auto-unlock         | Switch               |  Auto Unlock Coupler after charging    | X    | X     |
 
 #### Charge Flap Mapping
@@ -464,6 +465,15 @@ States and controls are depending on your vehicle capabilities.
 - 5 : Slow Charging
 - 6 : Fast Charging
 - 7 : Discharging
+- 8 : Not charging
+- 9 : Slow Charging after reaching trip target
+- 10 : Charging after reaching trip target
+- 11 : Fast Charging after reaching trip target
+- 12 : Connected
+- 13 : AC Charging
+- 14 : DC Charging
+- 15 : Battery calibration active
+- 16 : Unknown
 
 #### Charge Error Mapping
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -14,11 +14,12 @@ package org.openhab.binding.shelly.internal.api2;
 
 import java.util.ArrayList;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DevConfigBle.Shelly2DevConfigBleObserver;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DevConfigBle.Shelly2DevConfigBleRpc;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RpcBaseMessage.Shelly2RpcMessageError;
-import org.openhab.binding.shelly.internal.api2.ShellyBluEventDataDTO.Shelly2NotifyBluEventData;
+import org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.Shelly2NotifyBluEventData;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -31,6 +32,7 @@ import com.google.gson.annotations.SerializedName;
  */
 public class Shelly2ApiJsonDTO {
     public static final String SHELLYRPC_ENDPOINT = "/rpc";
+    public static final String SHELLY2_JSONRPC_VERSION = "2.0";
 
     public static final String SHELLYRPC_METHOD_CLASS_SHELLY = "Shelly";
     public static final String SHELLYRPC_METHOD_CLASS_SWITCH = "Switch";
@@ -136,7 +138,7 @@ public class Shelly2ApiJsonDTO {
     public static final String SHELLY2_EVENT_LPUSH = "long_push";
     public static final String SHELLY2_EVENT_SLPUSH = "short_long_push";
     public static final String SHELLY2_EVENT_LSPUSH = "long_short_push";
-    public static final String SHELLY2_EVENT_HOLDING = "hold";
+    public static final String SHELLY2_EVENT_HOLDING = "holding";
 
     public static final String SHELLY2_EVENT_SLEEP = "sleep";
     public static final String SHELLY2_EVENT_CFGCHANGED = "config_changed";
@@ -146,12 +148,6 @@ public class Shelly2ApiJsonDTO {
     public static final String SHELLY2_EVENT_RESTART = "scheduled_restart";
     public static final String SHELLY2_EVENT_WIFICONNFAILED = "sta_connect_fail";
     public static final String SHELLY2_EVENT_WIFIDISCONNECTED = "sta_disconnected";
-
-    // BLU events
-    public static final String SHELLY2_BLU_GWSCRIPT = "oh-blu-scanner.js";
-    public static final String SHELLY2_EVENT_BLUPREFIX = "oh-blu.";
-    public static final String SHELLY2_EVENT_BLUSCAN = SHELLY2_EVENT_BLUPREFIX + "scan_result";
-    public static final String SHELLY2_EVENT_BLUDATA = SHELLY2_EVENT_BLUPREFIX + "data";
 
     // Error Codes
     public static final String SHELLY2_ERROR_OVERPOWER = "overpower";
@@ -176,6 +172,9 @@ public class Shelly2ApiJsonDTO {
     public static final String SHELLY2_POWERLED_OFF = "off";
     public static final String SHELLY2_POWERLED_MATCH = "match_output";
     public static final String SHELLY2_POWERLED_INVERT = "inverted_output";
+
+    public static final String SHELLY2_DEFAULT_USERID = "admin"; // Gen2 devices only accept user admin
+    public static final String SHELLY2_DEFAULT_PASSWORD = "admin";
 
     public static class Shelly2DevConfigBle {
         public static class Shelly2DevConfigBleRpc {
@@ -309,7 +308,7 @@ public class Shelly2ApiJsonDTO {
             @SerializedName("factory_reset")
             public Boolean factoryReset;
             @SerializedName("report_thr")
-            public Double reportTreshold; // only for type analog
+            public Double reportThreshold; // only for type analog
         }
 
         public class Shelly2DevConfigSwitch {
@@ -354,7 +353,7 @@ public class Shelly2ApiJsonDTO {
             @SerializedName("blink_mode_selector")
             public String blinkModeSelector;
             @SerializedName("phase_selector")
-            public String phase_selector;
+            public String phaseSelector;
             @SerializedName("monitor_phase_sequence")
             public Boolean monitorPhaseSequence;
         }
@@ -367,7 +366,7 @@ public class Shelly2ApiJsonDTO {
         public class Shelly2DevConfigCover {
             public class Shelly2DeviceConfigCoverMotor {
                 @SerializedName("idle_power_thr")
-                public Double idle_powerThr;
+                public Double idlePowerThr;
             }
 
             public class Shelly2DeviceConfigCoverSafetySwitch {
@@ -527,6 +526,9 @@ public class Shelly2ApiJsonDTO {
             @SerializedName("light:0")
             public Shelly2GetConfigLight light0;
 
+            @SerializedName("light:1")
+            public Shelly2GetConfigLight light1;
+
             @SerializedName("rgbw:0")
             public Shelly2GetConfigLight rgbw0;
 
@@ -651,8 +653,8 @@ public class Shelly2ApiJsonDTO {
             }
 
             public class Shelly2DeviceStatusHumidity {
-                public Integer id;
-                public Double rh;
+                public @Nullable Integer id;
+                public @Nullable Double rh;
             }
 
             public class Shelly2DeviceStatusIlluminance {
@@ -662,12 +664,12 @@ public class Shelly2ApiJsonDTO {
             }
 
             public class Shelly2DeviceStatusVoltage {
-                public Integer id;
-                public Double voltage;
+                public @Nullable Integer id;
+                public @Nullable Double voltage;
             }
 
             public class Shelly2DeviceStatusTempId extends Shelly2DeviceStatusTemp {
-                public Integer id;
+                public @Nullable Integer id;
             }
 
             public static class Shelly2DeviceStatusPower {
@@ -828,6 +830,9 @@ public class Shelly2ApiJsonDTO {
             @SerializedName("light:0")
             public Shelly2DeviceStatusLight light0;
 
+            @SerializedName("light:1")
+            public Shelly2DeviceStatusLight light1;
+
             @SerializedName("temperature:0")
             public Shelly2DeviceStatusTempId temperature0;
             @SerializedName("temperature:100")
@@ -897,7 +902,7 @@ public class Shelly2ApiJsonDTO {
             @SerializedName("fs_free")
             public Long fsFree;
             @SerializedName("cfg_rev")
-            public Integer cfg_rev;
+            public Integer cfgRev;
             @SerializedName("available_updates")
             public Shelly2DeviceStatusSysAvlUpdate availableUpdates;
             @SerializedName("webhook_rev")
@@ -1137,6 +1142,7 @@ public class Shelly2ApiJsonDTO {
             public String message;
         }
 
+        public @Nullable String jsonrpc;
         public Integer id;
         public String src;
         public String dst;
@@ -1163,12 +1169,12 @@ public class Shelly2ApiJsonDTO {
         public Shelly2RpcMessageError error;
     }
 
-    public static String SHELLY2_AUTHDEF_USER = "admin";
-    public static String SHELLY2_AUTHTTYPE_DIGEST = "digest";
-    public static String SHELLY2_AUTHTTYPE_STRING = "string";
-    public static String SHELLY2_AUTHALG_SHA256 = "SHA-256";
+    public static final String SHELLY2_AUTHDEF_USER = "admin";
+    public static final String SHELLY2_AUTHTTYPE_DIGEST = "digest";
+    public static final String SHELLY2_AUTHTTYPE_STRING = "string";
+    public static final String SHELLY2_AUTHALG_SHA256 = "SHA-256";
     // = ':auth:'+HexHash("dummy_method:dummy_uri");
-    public static String SHELLY2_AUTH_NOISE = "6370ec69915103833b5222b368555393393f098bfbfbb59f47e0590af135f062";
+    public static final String SHELLY2_AUTH_NOISE = "6370ec69915103833b5222b368555393393f098bfbfbb59f47e0590af135f062";
 
     public static class Shelly2AuthChallenge { // on 401 message contains the auth info
         @SerializedName("auth_type")

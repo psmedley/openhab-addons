@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -16,21 +16,19 @@ import static org.openhab.binding.ring.RingBindingConstants.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.http.HttpMethod;
 import org.openhab.binding.ring.internal.RestClient;
 import org.openhab.binding.ring.internal.RingAccount;
 import org.openhab.binding.ring.internal.RingDeviceRegistry;
@@ -88,7 +86,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
     /**
      * The user profile retrieved when authenticating.
      */
-    private Tokens tokens = new Tokens("", "");
+    private volatile Tokens tokens = new Tokens("", "");
     /**
      * The registry.
      */
@@ -100,13 +98,11 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
     /**
      * The list with events.
      */
-    private List<RingEventTO> lastEvents = List.of();
+    private volatile List<RingEventTO> lastEvents = List.of();
     /**
      * The index to the current event.
      */
     private int eventIndex = 0;
-
-    private @Nullable ExecutorService videoExecutorService;
 
     /*
      * The number of video files to keep when auto-downloading
@@ -137,69 +133,57 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        if (command instanceof RefreshType) {
-            boolean eventListOk = lastEvents.size() > eventIndex;
-            switch (channelUID.getId()) {
-                case CHANNEL_EVENT_URL:
-                    if (eventListOk) {
-                        String videoFile = restClient.downloadEventVideo(lastEvents.get(eventIndex), tokens,
-                                videoStoragePath, videoRetentionCount);
-                        String localIP = networkAddressService.getPrimaryIpv4HostAddress();
+        switch (command) {
+            case RefreshType ignored -> handleRefresh(channelUID);
+            case OnOffType onOffCommand -> handleOnOff(channelUID, onOffCommand);
+            default -> logger.debug("Command {} is not supported for channel: {}", command, channelUID.getId());
+        }
+    }
 
-                        if (videoFile.endsWith(".mp4")) {
-                            updateState(channelUID,
-                                    new StringType("http://" + localIP + ":" + httpPort + "/ring/video/" + videoFile));
-                        } else {
-                            updateState(channelUID, new StringType(videoFile));
-                        }
-                    }
-                    break;
-                case CHANNEL_EVENT_CREATED_AT:
-                    if (eventListOk) {
-                        updateState(channelUID, lastEvents.get(eventIndex).getCreatedAt());
-                    }
-                    break;
-                case CHANNEL_EVENT_KIND:
-                    if (eventListOk) {
-                        updateState(channelUID, new StringType(lastEvents.get(eventIndex).kind));
-                    }
-                    break;
-                case CHANNEL_EVENT_DOORBOT_ID:
-                    if (eventListOk) {
-                        updateState(channelUID, new StringType(lastEvents.get(eventIndex).doorbot.id));
-                    }
-                    break;
-                case CHANNEL_EVENT_DOORBOT_DESCRIPTION:
-                    if (eventListOk) {
-                        updateState(channelUID, new StringType(lastEvents.get(eventIndex).doorbot.description));
-                    }
-                    break;
-                case CHANNEL_CONTROL_ENABLED:
+    private void handleRefresh(ChannelUID channelUID) {
+        boolean eventListOk = lastEvents.size() > eventIndex;
+        if (!eventListOk && !channelUID.getId().equals(CHANNEL_CONTROL_ENABLED)) {
+            return;
+        }
+
+        switch (channelUID.getId()) {
+            case CHANNEL_EVENT_URL -> {
+                String videoFile = restClient.downloadEventVideo(lastEvents.get(eventIndex), tokens, videoStoragePath,
+                        videoRetentionCount);
+                String localIP = networkAddressService.getPrimaryIpv4HostAddress();
+
+                if (videoFile.endsWith(".mp4")) {
+                    updateState(channelUID,
+                            new StringType("http://" + localIP + ":" + httpPort + "/ring/video/" + videoFile));
+                } else {
+                    updateState(channelUID, new StringType(videoFile));
+                }
+            }
+            case CHANNEL_EVENT_CREATED_AT -> updateState(channelUID, lastEvents.get(eventIndex).getCreatedAt());
+            case CHANNEL_EVENT_KIND -> updateState(channelUID, new StringType(lastEvents.get(eventIndex).kind));
+            case CHANNEL_EVENT_DOORBOT_ID ->
+                updateState(channelUID, new StringType(lastEvents.get(eventIndex).doorbot.id));
+            case CHANNEL_EVENT_DOORBOT_DESCRIPTION ->
+                updateState(channelUID, new StringType(lastEvents.get(eventIndex).doorbot.description));
+            case CHANNEL_CONTROL_ENABLED -> updateState(channelUID, enabled);
+            default -> logger.debug("Refresh command received for an unknown channel: {}", channelUID.getId());
+        }
+    }
+
+    private void handleOnOff(ChannelUID channelUID, OnOffType xcommand) {
+        switch (channelUID.getId()) {
+            case CHANNEL_CONTROL_ENABLED -> {
+                if (!enabled.equals(xcommand)) {
+                    enabled = xcommand;
                     updateState(channelUID, enabled);
-                    break;
-                default:
-                    logger.debug("Command received for an unknown channel: {}", channelUID.getId());
-                    break;
-            }
-        } else if (command instanceof OnOffType xcommand) {
-            switch (channelUID.getId()) {
-                case CHANNEL_CONTROL_ENABLED:
-                    if (!enabled.equals(xcommand)) {
-                        enabled = xcommand;
-                        updateState(channelUID, enabled);
-                        if (enabled.equals(OnOffType.ON)) {
-                            startAutomaticRefresh(config.refreshInterval);
-                        } else {
-                            stopAutomaticRefresh();
-                        }
+                    if (enabled.equals(OnOffType.ON)) {
+                        startAutomaticRefresh(config.refreshInterval);
+                    } else {
+                        stopAutomaticRefresh();
                     }
-                    break;
-                default:
-                    logger.debug("Command received for an unknown channel: {}", channelUID.getId());
-                    break;
+                }
             }
-        } else {
-            logger.debug("Command {} is not supported for channel: {}", command, channelUID.getId());
+            default -> logger.debug("OnOff command received for an unknown channel: {}", channelUID.getId());
         }
     }
 
@@ -235,7 +219,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
             folder.mkdirs();
         }
         try {
-            Files.write(Paths.get(fileName), refreshToken.getBytes());
+            Files.writeString(Paths.get(fileName), refreshToken);
         } catch (IOException ex) {
             logger.debug("IOException when writing refreshToken to file {}", ex.getMessage());
         }
@@ -252,8 +236,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
             return refreshToken;
         }
         try {
-            final byte[] contents = Files.readAllBytes(Paths.get(fileName));
-            refreshToken = new String(contents);
+            refreshToken = Files.readString(Paths.get(fileName));
         } catch (IOException ex) {
             logger.debug("IOException when reading refreshToken from file {}", ex.getMessage());
         }
@@ -279,9 +262,8 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, ex.getMessage());
             }
         } catch (JsonParseException e) {
-            logger.debug("Invalid response from api.ring.com when initializing Ring Account handler{}", e.getMessage());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                    "Invalid response from api.ring.com");
+                    "@text/offline.comm-error.invalid-response");
         }
         logger.debug("doLogin RT: {}", getRefreshTokenFromFile());
         try {
@@ -289,12 +271,10 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
             updateStatus(ThingStatus.ONLINE);
         } catch (AuthenticationException ae) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                    "AuthenticationException response from ring.com");
-            logger.debug("RestClient reported AuthenticationException in finally block: {}", ae.getMessage());
+                    "@text/offline.comm-error.auth-exception");
         } catch (JsonParseException pe1) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                     "JsonParseException response from ring.com");
-            logger.debug("RestClient reported JsonParseException in finally block: {}", pe1.getMessage());
         }
     }
 
@@ -302,24 +282,11 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
         String hardwareId = config.hardwareId;
         logger.debug("getHardwareId H:{}", hardwareId);
         Configuration updatedConfiguration = getThing().getConfiguration();
-        try {
-            if (hardwareId.isBlank()) {
-                hardwareId = getLocalMAC();
-                if (hardwareId.isBlank()) {
-                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                            "Hardware ID missing, check thing config");
-                    return hardwareId;
-                }
-                logger.debug("getHardwareId getLocalMac H:{}", hardwareId);
-                // write hardwareId to thing config
-                config.hardwareId = hardwareId;
-                updatedConfiguration.put("hardwareId", config.hardwareId);
-                updateConfiguration(updatedConfiguration);
-            }
-        } catch (IOException e) {
-            logger.debug("getHardwareId failed to get local mac address {}", e.getMessage());
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                    "Initialization failed: " + e.getMessage());
+        if (hardwareId.isBlank()) {
+            hardwareId = java.util.UUID.randomUUID().toString();
+            config.hardwareId = hardwareId;
+            updatedConfiguration.put("hardwareId", config.hardwareId);
+            updateConfiguration(updatedConfiguration);
         }
         return hardwareId;
     }
@@ -445,10 +412,26 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
                     updateState(CHANNEL_EVENT_DOORBOT_ID, new StringType(lastEvents.getFirst().doorbot.id));
                     updateState(CHANNEL_EVENT_DOORBOT_DESCRIPTION,
                             new StringType(lastEvents.getFirst().doorbot.description));
-                    ExecutorService service = videoExecutorService;
-                    if (service != null) {
-                        service.submit(() -> getVideo(lastEvents.getFirst()));
+                    String detectionType = null;
+                    if (lastEvents.getFirst().cvProperties != null) {
+                        detectionType = lastEvents.getFirst().cvProperties.detectionType;
                     }
+                    if (detectionType == null) {
+                        detectionType = "";
+                    }
+                    if ("motion".equals(lastEvents.getFirst().kind)) {
+                        String desc = lastEvents.getFirst().doorbot.description;
+
+                        String message = switch (detectionType) {
+                            case "human" -> "There is a Person at your " + desc;
+                            case "vehicle" -> "There is a Vehicle at your " + desc;
+                            default -> "There is motion at your " + desc;
+                        };
+
+                        updateState(CHANNEL_EVENT_EXTENDED_DESCRIPTION, new StringType(message));
+                    }
+                    RingEventTO latestEvent = lastEvents.getFirst();
+                    scheduler.execute(() -> getVideo(latestEvent));
                 }
             } else {
                 logger.debug("AccountHandler - eventTick - lastEvents null");
@@ -457,7 +440,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                     "AuthenticationException response from ring.com");
             logger.debug(
-                    "RestClient reported AuthenticationExceptionfrom api.ring.com when retrying refreshRegistry for the second time: {}",
+                    "RestClient reported AuthenticationException from api.ring.com when retrying refreshRegistry for the second time: {}",
                     ex.getMessage());
         } catch (JsonParseException ignored) {
             logger.debug(
@@ -512,31 +495,6 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
         eventRefresh = null;
     }
 
-    private String getLocalMAC() throws IOException {
-        // get local ip from OH system settings
-        String localIP = networkAddressService.getPrimaryIpv4HostAddress();
-        if ((localIP == null) || (localIP.isBlank())) {
-            logger.debug("No local IP selected in openHAB system configuration");
-            return "";
-        }
-
-        // get MAC address
-        InetAddress ip = InetAddress.getByName(localIP);
-        NetworkInterface network = NetworkInterface.getByInetAddress(ip);
-        if (network != null) {
-            byte[] mac = network.getHardwareAddress();
-
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < mac.length; i++) {
-                sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
-            }
-            String localMAC = sb.toString();
-            logger.debug("Local IP address='{}', local MAC address = '{}'", localIP, localMAC);
-            return localMAC;
-        }
-        return "";
-    }
-
     /**
      * Dispose of the refreshJob nicely.
      */
@@ -546,11 +504,6 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
 
         stopSessionRefresh();
         stopAutomaticRefresh();
-        ExecutorService service = this.videoExecutorService;
-        if (service != null) {
-            service.shutdownNow();
-        }
-        this.videoExecutorService = null;
         super.dispose();
     }
 
@@ -563,6 +516,50 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
     @Override
     public @Nullable RingDevice getDevice(String id) {
         return registry.getRingDevice(id);
+    }
+
+    @Override
+    public long getSnapshotTimestamp(String id) {
+        try {
+            return restClient.getSnapshotTimestamp(id, tokens);
+        } catch (AuthenticationException ae) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                    "@text/offline.comm-error.invalid-response");
+            return -1;
+        }
+    }
+
+    @Override
+    public byte[] getSnapshot(String id) {
+        try {
+            return restClient.getSnapshot(id, tokens);
+        } catch (AuthenticationException ae) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                    "@text/offline.comm-error.auth-exception");
+        }
+        return new byte[0];
+    }
+
+    @Override
+    public void sendCommand(String url) {
+        try {
+            logger.debug("sending url {} to Ring API", url);
+            restClient.sendCommand(url, tokens);
+        } catch (AuthenticationException ae) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                    "@text/offline.comm-error.invalid-response");
+        }
+    }
+
+    @Override
+    public void sendCommand(String url, HttpMethod httpMethod, String payload) {
+        try {
+            logger.trace("sending url {} with payload {} to Ring API", url, payload);
+            restClient.sendCommand(url, httpMethod, payload, tokens);
+        } catch (AuthenticationException ae) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                    "@text/offline.comm-error.invalid-response");
+        }
     }
 
     @Override

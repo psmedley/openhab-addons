@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -14,12 +14,14 @@ package org.openhab.binding.shelly.internal.api2;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
-import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.*;
-import static org.openhab.binding.shelly.internal.discovery.ShellyThingCreator.getBluServiceName;
+import static org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
+
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyInputState;
@@ -35,7 +37,9 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorState;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2NotifyEvent;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RpcNotifyEvent;
-import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
+import org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.Shelly2NotifyBluEventData;
+import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
+import org.openhab.binding.shelly.internal.discovery.ShellyThingCreator;
 import org.openhab.binding.shelly.internal.handler.ShellyBluHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
@@ -48,11 +52,12 @@ import org.slf4j.LoggerFactory;
  * {@link ShellyBluApi} implementsBLU interface
  *
  * @author Markus Michels - Initial contribution
+ * @author Udo Hartmann - Add support for decoding multi button inputs
  */
 @NonNullByDefault
 public class ShellyBluApi extends Shelly2ApiRpc {
     private final Logger logger = LoggerFactory.getLogger(ShellyBluApi.class);
-    private boolean connected = false; // true = BLU devices has connected
+    private boolean connected; // true = BLU devices has connected
     private ShellySettingsStatus deviceStatus = new ShellySettingsStatus();
     private int lastPid = -1;
     private static final int PID_CYCLE_TRESHHOLD = 50;
@@ -63,42 +68,32 @@ public class ShellyBluApi extends Shelly2ApiRpc {
      * @param thingName Symbolic thing name
      * @param thingTable Table of known things (build at runtime)
      * @param thing Thing Handler (ThingHandlerInterface)
+     * @param scheduler the {@link ScheduledExecutorService} to use for scheduling.
      */
-    public ShellyBluApi(String thingName, ShellyThingTable thingTable, ShellyThingInterface thing) {
-        super(thingName, thingTable, thing);
+    public ShellyBluApi(String thingName, ShellyThingTable thingTable, ShellyThingInterface thing,
+            ShellyApiConfiguration config, WebSocketClient webSocketClient, ScheduledExecutorService scheduler) {
+        super(thingName, thingTable, thing, config, webSocketClient, scheduler);
 
-        ShellyDeviceProfile profile = thing.getProfile();
         ThingTypeUID uid = thing.getThing().getThingTypeUID();
         profile.initializeInputs(uid, SHELLY_BTNT_MOMENTARY);
         deviceStatus = profile.status;
     }
 
     @Override
-    public void initialize() throws ShellyApiException {
+    public void initialize() {
         if (!initialized) {
-            initialized = true;
             connected = false;
+            initialized = true;
         }
-    }
-
-    @Override
-    public boolean isInitialized() {
-        return initialized;
-    }
-
-    @Override
-    public void setConfig(String thingName, ShellyThingConfiguration config) {
-        this.thingName = thingName;
-        this.config = config;
     }
 
     @Override
     public ShellySettingsDevice getDeviceInfo() throws ShellyApiException {
         ShellySettingsDevice info = new ShellySettingsDevice();
-        info.hostname = !config.serviceName.isEmpty() ? config.serviceName : "";
+        info.hostname = config.getRealm();
         info.fw = "";
         info.type = "BLU";
-        info.mac = config.deviceAddress;
+        info.mac = config.getBdAddr() instanceof String bdAddr ? bdAddr : "";
         info.auth = false;
         info.gen = 2;
         return info;
@@ -107,7 +102,7 @@ public class ShellyBluApi extends Shelly2ApiRpc {
     @Override
     public ShellyDeviceProfile getDeviceProfile(ThingTypeUID thingTypeUID, @Nullable ShellySettingsDevice devInfo)
             throws ShellyApiException {
-        ShellyDeviceProfile profile = thing != null ? getProfile() : new ShellyDeviceProfile();
+        ShellyDeviceProfile profile = thing != null ? getProfile() : new ShellyDeviceProfile(thingTypeUID);
 
         if (devInfo != null) {
             profile.device = devInfo;
@@ -122,8 +117,8 @@ public class ShellyBluApi extends Shelly2ApiRpc {
         }
 
         profile.device = getDeviceInfo();
-        if (config.serviceName.isEmpty()) {
-            config.serviceName = getString(profile.device.hostname);
+        if (config.getRealm().isBlank()) {
+            config.setRealm(getString(profile.device.hostname));
         }
 
         // for now we have no API to get this information
@@ -133,7 +128,7 @@ public class ShellyBluApi extends Shelly2ApiRpc {
         if (profile.hasBattery) {
             profile.settings.sleepMode = new ShellySensorSleepMode();
             profile.settings.sleepMode.unit = "m";
-            profile.settings.sleepMode.period = 720;
+            profile.settings.sleepMode.period = 720 + 10; // device should report fw + battery every 3h
         }
 
         profile.initialized = true;
@@ -143,7 +138,7 @@ public class ShellyBluApi extends Shelly2ApiRpc {
     @Override
     public ShellySettingsStatus getStatus() throws ShellyApiException {
         if (!connected) {
-            throw new ShellyApiException("Thing is not yet initialized -> status not available");
+            throw new ShellyApiException("offline.status-error-blu-not-connected");
         }
         return deviceStatus;
     }
@@ -151,15 +146,14 @@ public class ShellyBluApi extends Shelly2ApiRpc {
     @Override
     public ShellyStatusSensor getSensorStatus() throws ShellyApiException {
         if (!connected) {
-            throw new ShellyApiException("Thing is not yet initialized -> sensor data not available");
+            throw new ShellyApiException("offline.status-error-blu-sensor-unavailable");
         }
-
         return sensorData;
     }
 
     @Override
-    public void onNotifyEvent(Shelly2RpcNotifyEvent message) {
-        logger.trace("{}: ShellyEvent received: {}", thingName, gson.toJson(message));
+    public void onNotifyEvent(String eventJSON) {
+        logger.trace("{}: ShellyEvent received: {}", thingName, eventJSON);
 
         ShellyBluHandler t = (ShellyBluHandler) thing;
         if (t == null) {
@@ -169,9 +163,9 @@ public class ShellyBluApi extends Shelly2ApiRpc {
 
         try {
             ShellyDeviceProfile profile = getProfile();
+            Shelly2RpcNotifyEvent message = fromJson(gson, eventJSON, Shelly2RpcNotifyEvent.class);
 
             t.incProtMessages();
-
             if (!connected) {
                 connected = true;
                 t.setThingOnline();
@@ -182,8 +176,8 @@ public class ShellyBluApi extends Shelly2ApiRpc {
             for (Shelly2NotifyEvent e : message.params.events) {
                 String event = getString(e.event);
                 if (event.startsWith(SHELLY2_EVENT_BLUPREFIX)) {
-                    logger.debug("{}: BLU event {} received from address {}, pid={}", thingName, event,
-                            getString(e.blu.addr), getInteger(e.blu.pid));
+                    logger.debug("{}: BLU event {} received from address {}, pid={} (JSON={})", thingName, event,
+                            getString(e.blu.addr), getInteger(e.blu.pid), eventJSON);
                     if (e.blu.pid != null) {
                         int pid = e.blu.pid;
                         if (lastPid != -1 && pid < (lastPid - PID_CYCLE_TRESHHOLD)) {
@@ -207,7 +201,7 @@ public class ShellyBluApi extends Shelly2ApiRpc {
                             break;
                         }
                         if (e.blu.name != null) {
-                            profile.settings.name = getBluServiceName(e.blu.name, e.blu.addr);
+                            profile.settings.name = ShellyThingCreator.getBluServiceName(e.blu.name, e.blu.addr);
                             logger.debug("{}: BLU Device {} discovered, mapped to serviceName {}", thingName,
                                     e.blu.name, profile.settings.name);
                         }
@@ -218,105 +212,145 @@ public class ShellyBluApi extends Shelly2ApiRpc {
                             break;
                         }
 
+                        initializeSensorData(sensorData, e.blu);
                         if (e.blu.battery != null) {
-                            if (sensorData.bat == null) {
-                                sensorData.bat = new ShellySensorBat();
-                            }
                             sensorData.bat.value = (double) e.blu.battery;
                         }
                         if (e.blu.rssi != null) {
                             deviceStatus.wifiSta.rssi = e.blu.rssi;
                         }
                         if (e.blu.windowState != null) {
-                            if (sensorData.sensor == null) {
-                                sensorData.sensor = new ShellySensorState();
-                            }
-                            sensorData.sensor.isValid = true;
                             sensorData.sensor.state = e.blu.windowState == 1 ? SHELLY_API_DWSTATE_OPEN
                                     : SHELLY_API_DWSTATE_CLOSE;
                         }
                         if (e.blu.illuminance != null) {
-                            if (sensorData.lux == null) {
-                                sensorData.lux = new ShellySensorLux();
-                            }
                             sensorData.lux.isValid = true;
                             sensorData.lux.value = (double) e.blu.illuminance;
                         }
                         if (e.blu.temperatures != null) {
                             if (e.blu.temperatures.length == 1) {
-                                if (sensorData.tmp == null) {
-                                    sensorData.tmp = new ShellySensorTmp();
-                                }
                                 sensorData.tmp.units = SHELLY_TEMP_CELSIUS;
                                 sensorData.tmp.isValid = true;
                                 sensorData.tmp.tC = e.blu.temperatures[0];
-                            } else {
-                                // BLU TRV reports current temp and target temp
-                                // However, we don't support BLU TRV yet, so ignore
                             }
+                            // BLU TRV reports current temp and target temp
+                            // However, we don't support BLU TRV yet, so ignore
                         }
                         if (e.blu.humidity != null) {
-                            if (sensorData.hum == null) {
-                                sensorData.hum = new ShellySensorHum();
-                            }
                             sensorData.hum.value = e.blu.humidity;
                         }
-                        if (e.blu.rotation != null) {
-                            if (sensorData.accel == null) {
-                                sensorData.accel = new ShellySensorAccel();
-                            }
-                            sensorData.accel.tilt = e.blu.rotation.intValue();
-                        }
                         if (e.blu.motionState != null) {
-                            sensorData.motion = e.blu.motionState == 1;
+                            sensorData.sensor.motion = e.blu.motionState == 1;
                         }
-                        if (e.blu.firmware != null) {
-                            int digit4 = (int) (e.blu.firmware & 0x000000FF);
-                            int digit3 = (int) (e.blu.firmware & 0x0000FF00) >> 8;
-                            int digit2 = (int) (e.blu.firmware & 0x00FF0000) >> 16;
-                            int digit1 = (int) (e.blu.firmware & 0xFF000000) >> 24;
-                            profile.fwVersion = digit1 > 0 ? //
-                                    digit1 + "." + digit2 + "." + digit3 + "." + digit4
-                                    : digit2 + "," + digit3 + "." + digit4;
-                            logger.debug("{}: Detected firmware version: {}", thingName, profile.fwVersion);
+                        if (e.blu.rotations != null) {
+                            if (e.blu.rotations.length == 1) { // BLU DW
+                                sensorData.accel.tilt = e.blu.rotations[0].intValue();
+                            } else if (e.blu.rotations.length == 3) { // BLU Remote
+                                sensorData.rotationX = getDouble(e.blu.rotations[0]);
+                                sensorData.rotationY = getDouble(e.blu.rotations[1]);
+                                sensorData.rotationZ = getDouble(e.blu.rotations[2]);
+                            }
                         }
+                        if (e.blu.dimmer != null) {
+                            if (e.blu.dimmer.direction != null) {
+                                sensorData.direction = e.blu.dimmer.direction == 1 ? "up" : "down";
+                            }
+                            if (e.blu.dimmer.steps != null && e.blu.dimmer.steps != 0) {
+                                sensorData.steps = getInteger(e.blu.dimmer.steps); // 0-based
+                            }
+                        }
+                        if (e.blu.channel != null) { // BLU Remote
+                            sensorData.channel = e.blu.channel;
+                        }
+                        if (e.blu.vibration != null) {
+                            sensorData.sensor.vibration = getInteger(e.blu.vibration) != 0;
+                        }
+                        if (e.blu.distance != null) {
+                            sensorData.distance = e.blu.distance;
+                        }
+                        if (e.blu.firmware32 != null) {
+                            profile.fwVersion = getFirmwareVersion(e.blu.firmware32);
+                        }
+
                         if (e.blu.buttons != null) {
                             logger.trace("{}: Shelly BLU button events received: {}", thingName,
                                     gson.toJson(e.blu.buttons));
                             for (int bttnIdx = 0; bttnIdx < e.blu.buttons.length; bttnIdx++) {
                                 if (e.blu.buttons[bttnIdx] != 0) {
                                     ShellyInputState input = deviceStatus.inputs.get(bttnIdx);
-                                    input.event = MAP_BLU_INPUT_EVENT_TYPE.getOrDefault(e.blu.buttons[bttnIdx], "");
-
-                                    String group = getProfile().getInputGroup(bttnIdx);
-                                    String suffix = profile.getInputSuffix(bttnIdx);
-                                    // ignore HOLDING events for counter and trigger
-                                    if (!SHELLY_BTNEVENT_HOLDING.equalsIgnoreCase(input.event)) {
-                                        logger.debug("{}: update to {}, pid={}", message.src, input.event, e.blu.pid);
-                                        t.updateChannel(group, CHANNEL_STATUS_EVENTTYPE + suffix,
-                                                getStringType(input.event));
-                                        input.eventCount++;
-                                        t.updateChannel(group, CHANNEL_STATUS_EVENTCOUNT + suffix,
-                                                getDecimal(input.eventCount));
-                                        t.triggerButton(profile.getInputGroup(bttnIdx), bttnIdx, input.event);
-                                    } else {
-                                        logger.debug("{}: ignore H, pid={}", message.src, e.blu.pid);
+                                    String btnEvent = mapIntValue(MAP_BLU_INPUT_EVENT_TYPE, e.blu.buttons[bttnIdx]);
+                                    if (!btnEvent.isEmpty()) {
+                                        // ignore HOLDING events for counter and trigger
+                                        if (!SHELLY_BTNEVENT_HOLDING.equals(btnEvent) || !profile.isMultiButton) {
+                                            input.event = btnEvent;
+                                            input.eventCount++;
+                                            String group = getProfile().getInputGroup(bttnIdx);
+                                            String suffix = profile.getInputSuffix(bttnIdx);
+                                            logger.debug("{}: update to {}, pid={}", message.src, input.event,
+                                                    e.blu.pid);
+                                            t.updateChannel(group, CHANNEL_STATUS_EVENTTYPE + suffix,
+                                                    getStringType(input.event));
+                                            t.updateChannel(group, CHANNEL_STATUS_EVENTCOUNT + suffix,
+                                                    getDecimal(input.eventCount));
+                                            t.triggerButton(profile.getInputGroup(bttnIdx), bttnIdx, input.event);
+                                        } else {
+                                            logger.debug("{}: Ignore button event HOLDING, pid={}", message.src,
+                                                    e.blu.pid);
+                                        }
+                                        deviceStatus.inputs.set(bttnIdx, input);
                                     }
-                                    deviceStatus.inputs.set(bttnIdx, input);
                                 }
                             }
                         }
-
                         ShellyComponents.updateDeviceStatus(t, deviceStatus);
                         ShellyComponents.updateSensors(getThing(), deviceStatus);
                         break;
                     default:
-                        super.onNotifyEvent(message);
+                        super.onNotifyEvent(eventJSON);
                 }
             }
         } catch (ShellyApiException e) {
             logger.debug("{}: Unable to process event", thingName, e);
             t.incProtErrors();
         }
+    }
+
+    private static void initializeSensorData(ShellyStatusSensor sensorData, Shelly2NotifyBluEventData data) {
+        if (data.battery != null && sensorData.bat == null) {
+            sensorData.bat = new ShellySensorBat();
+        }
+        if (data.illuminance != null && sensorData.lux == null) {
+            sensorData.lux = new ShellySensorLux();
+        }
+        if (data.temperatures != null && sensorData.tmp == null) {
+            sensorData.tmp = new ShellySensorTmp();
+        }
+        if (data.humidity != null && sensorData.hum == null) {
+            sensorData.hum = new ShellySensorHum();
+        }
+        if (data.rotations != null && sensorData.accel == null) {
+            sensorData.accel = new ShellySensorAccel();
+        }
+        if ((data.windowState != null || data.motionState != null || data.vibration != null)
+                && sensorData.sensor == null) {
+            sensorData.sensor = new ShellySensorState();
+            sensorData.sensor.isValid = true;
+        }
+    }
+
+    private String getFirmwareVersion(Long firmware) {
+        // BTHome knows a 24 and 32 bit format. I want to strip off the first digit on 24 bit
+        // 32-bit: 0x01001700 -> 1.0.23.0 - GA of 1.0.23
+        // 32-bit: 0x01001605 -> 1.0.22.4 - rc4 of 1.0.22
+        // 24-bit: 0x00010204 -> 0.1.2.4 -> 1.2.4
+        int digit4 = (int) (firmware & 0x000000FF);
+        int digit3 = (int) (firmware & 0x0000FF00) >> 8;
+        int digit2 = (int) (firmware & 0x00FF0000) >> 16;
+        int digit1 = (int) (firmware & 0xFF000000) >> 24;
+        String strFirmware = digit1 > 0 ? //
+                digit1 + "." + digit2 + "." + digit3 + "." + digit4 : // 32bit
+                digit2 + "." + digit3 + "." + digit4; // 24 bit
+        logger.debug("{}: Detected firmware version: {}", thingName, strFirmware);
+        return strFirmware;
     }
 }

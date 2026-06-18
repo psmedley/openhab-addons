@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -13,8 +13,11 @@
 package org.openhab.binding.homematic.internal.communicator.parser;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.homematic.internal.model.HmChannel;
 import org.openhab.binding.homematic.internal.model.HmDatapoint;
 import org.openhab.binding.homematic.internal.model.HmInterface;
@@ -27,7 +30,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Gerhard Riegler - Initial contribution
  */
-public class GetParamsetDescriptionParser extends CommonRpcParser<Object[], Void> {
+@NonNullByDefault
+public class GetParamsetDescriptionParser extends CommonRpcParser<Object[], @Nullable Void> {
     private final Logger logger = LoggerFactory.getLogger(GetParamsetDescriptionParser.class);
     private HmParamsetType paramsetType;
     private HmChannel channel;
@@ -41,23 +45,47 @@ public class GetParamsetDescriptionParser extends CommonRpcParser<Object[], Void
 
     @Override
     @SuppressWarnings("unchecked")
-    public Void parse(Object[] message) throws IOException {
-        if (!(message[0] instanceof Map)) {
-            logger.debug("Unexpected datatype '{}',  ignoring message", message[0].getClass());
+    public @Nullable Void parse(Object[] message) throws IOException {
+        if (message.length == 0 || !(message[0] instanceof Map)) {
+            String datatype = message.length == 0 ? "<empty>" : message[0].getClass().getName();
+            logger.debug("Unexpected datatype '{}', ignoring message", datatype);
             return null;
         }
         Map<String, Map<String, Object>> dpNames = (Map<String, Map<String, Object>>) message[0];
 
         for (String datapointName : dpNames.keySet()) {
             Map<String, Object> dpMeta = dpNames.get(datapointName);
+            if (dpMeta == null) {
+                logger.debug("No metadata found for datapoint '{}', skipping", datapointName);
+                continue;
+            }
 
             HmDatapoint dp = assembleDatapoint(datapointName, toString(dpMeta.get("UNIT")),
                     toString(dpMeta.get("TYPE")), toOptionList(dpMeta.get("VALUE_LIST")), dpMeta.get("MIN"),
-                    dpMeta.get("MAX"), toInteger(dpMeta.get("OPERATIONS")), dpMeta.get("DEFAULT"), paramsetType,
-                    isHmIpDevice);
+                    dpMeta.get("MAX"), toInteger(dpMeta.get("OPERATIONS")), dpMeta.get("DEFAULT"),
+                    toSpecialValues(dpMeta.get("SPECIAL")), paramsetType, isHmIpDevice);
             channel.addDatapoint(dp);
         }
 
+        return null;
+    }
+
+    private @Nullable Map<String, Number> toSpecialValues(@Nullable Object specialValues) {
+        if (specialValues != null && specialValues instanceof Object[] array) {
+            Map<String, Number> result = new HashMap<>();
+            for (int i = 0; i < array.length; i++) {
+                if (array[i] instanceof Map itemMap) {
+                    String id = (String) itemMap.get("ID");
+                    Object value = itemMap.get("VALUE");
+                    if (id != null && value instanceof Number number) {
+                        result.put(id, number);
+                    }
+                }
+            }
+            if (!result.isEmpty()) {
+                return result;
+            }
+        }
         return null;
     }
 }
