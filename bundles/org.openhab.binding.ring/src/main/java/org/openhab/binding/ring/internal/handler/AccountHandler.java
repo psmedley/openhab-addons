@@ -104,6 +104,8 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
      */
     private int eventIndex = 0;
 
+    private long lastRegistryRefresh = 0;
+    private static final long REGISTRY_CACHE_MS = 10 * 60 * 1000;
     /*
      * The number of video files to keep when auto-downloading
      */
@@ -267,7 +269,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
         }
         logger.debug("doLogin RT: {}", getRefreshTokenFromFile());
         try {
-            refreshRegistry();
+            refreshRegistry(true);
             updateStatus(ThingStatus.ONLINE);
         } catch (AuthenticationException ae) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
@@ -333,7 +335,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
                     updateProperties(properties);
                 }
 
-                refreshRegistry();
+                refreshRegistry(true);
 
                 startAutomaticRefresh(refreshInterval);
                 startSessionRefresh(refreshInterval);
@@ -357,15 +359,22 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
         }
     }
 
-    private void refreshRegistry() throws JsonParseException, AuthenticationException {
-        logger.debug("AccountHandler - refreshRegistry");
+    private void refreshRegistry(boolean force) throws JsonParseException, AuthenticationException {
+        // If not forced, and the cache hasn't expired, skip the API call
+        if (!force && (System.currentTimeMillis() - lastRegistryRefresh < REGISTRY_CACHE_MS)) {
+            logger.debug("AccountHandler - refreshRegistry - Using cached registry data to prevent API throttling");
+            return;
+        }
+
+        logger.debug("AccountHandler - refreshRegistry - Fetching fresh device data from API");
         RingDevicesTO ringDevices = restClient.getRingDevices(tokens);
         registry.addOrUpdateRingDevices(ringDevices);
+        lastRegistryRefresh = System.currentTimeMillis();
     }
 
     protected void minuteTick() {
         try {
-            refreshRegistry();
+            refreshRegistry(false);
             updateStatus(ThingStatus.ONLINE);
         } catch (AuthenticationException | JsonParseException e) {
             String refreshToken = getRefreshTokenFromFile();
@@ -373,7 +382,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
                 try {
                     tokens = restClient.getTokens(config.username, config.password, refreshToken, "",
                             config.hardwareId);
-                    refreshRegistry();
+                    refreshRegistry(false);
                     updateStatus(ThingStatus.ONLINE);
                 } catch (AuthenticationException ex) {
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Invalid credentials");
@@ -452,7 +461,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
 
     private void refreshToken() {
         try {
-            refreshRegistry();
+            refreshRegistry(false);
             tokens = restClient.getTokens("", "", tokens.refreshToken(), "", config.hardwareId);
         } catch (AuthenticationException e) {
             logger.debug(
