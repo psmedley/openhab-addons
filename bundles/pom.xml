@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.openhab.addons</groupId>
     <artifactId>org.openhab.addons.reactor</artifactId>
-    <version>5.2.0-SNAPSHOT</version>
+    <version>5.3.0-SNAPSHOT</version>
   </parent>
   <groupId>org.openhab.addons.bundles</groupId>
   <artifactId>org.openhab.addons.reactor.bundles</artifactId>
@@ -111,6 +111,7 @@
     <module>org.openhab.binding.dali</module>
     <module>org.openhab.binding.danfossairunit</module>
     <module>org.openhab.binding.dbquery</module>
+    <module>org.openhab.binding.ddwrt</module>
     <module>org.openhab.binding.deconz</module>
     <module>org.openhab.binding.denonmarantz</module>
     <module>org.openhab.binding.deutschebahn</module>
@@ -175,6 +176,7 @@
     <module>org.openhab.binding.ftpupload</module>
     <module>org.openhab.binding.gardena</module>
     <module>org.openhab.binding.gce</module>
+    <module>org.openhab.binding.gemini</module>
     <module>org.openhab.binding.generacmobilelink</module>
     <module>org.openhab.binding.goecharger</module>
     <module>org.openhab.binding.govee</module>
@@ -199,6 +201,7 @@
     <module>org.openhab.binding.herzborg</module>
     <module>org.openhab.binding.homeassistant</module>
     <module>org.openhab.binding.homeconnect</module>
+    <module>org.openhab.binding.homeconnectdirect</module>
     <module>org.openhab.binding.homekit</module>
     <module>org.openhab.binding.homie</module>
     <module>org.openhab.binding.homematic</module>
@@ -340,6 +343,7 @@
     <module>org.openhab.binding.orvibo</module>
     <module>org.openhab.binding.panasonicbdp</module>
     <module>org.openhab.binding.paradoxalarm</module>
+    <module>org.openhab.binding.peblar</module>
     <module>org.openhab.binding.pegelonline</module>
     <module>org.openhab.binding.pentair</module>
     <module>org.openhab.binding.phc</module>
