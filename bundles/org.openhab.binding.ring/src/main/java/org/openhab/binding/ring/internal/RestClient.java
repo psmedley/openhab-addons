@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -20,7 +20,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,6 +45,7 @@ import org.openhab.binding.ring.internal.api.ProfileTO;
 import org.openhab.binding.ring.internal.api.RingDevicesTO;
 import org.openhab.binding.ring.internal.api.RingEventTO;
 import org.openhab.binding.ring.internal.api.SessionTO;
+import org.openhab.binding.ring.internal.api.SessionTimestampTO;
 import org.openhab.binding.ring.internal.api.TokenTO;
 import org.openhab.binding.ring.internal.data.ParamBuilder;
 import org.openhab.binding.ring.internal.data.Tokens;
@@ -84,6 +84,30 @@ public class RestClient {
         this.httpClient = httpClient;
     }
 
+    private void validateResponse(ContentResponse response) throws AuthenticationException {
+        int responseCode = response.getStatus();
+        switch (responseCode) {
+            case HttpStatus.OK_200, HttpStatus.CREATED_201:
+                return; // Success
+            case HttpStatus.BAD_REQUEST_400:
+                throw new AuthenticationException("Bad request");
+            case HttpStatus.UNAUTHORIZED_401:
+                throw new AuthenticationException("Invalid username or password");
+            case HttpStatus.PRECONDITION_FAILED_412: {
+                String reason = Objects.toString(response.getReason(), "");
+                if (reason.startsWith("Precondition") || reason.startsWith("Verification Code")) {
+                    throw new AuthenticationException("Two factor authentication enabled, enter code");
+                }
+                throw new AuthenticationException("Invalid username or password");
+            }
+            case HttpStatus.TOO_MANY_REQUESTS_429:
+                throw new AuthenticationException("Account rate-limited");
+            default:
+                throw new AuthenticationException(
+                        "Unhandled HTTP error: " + responseCode + " - " + response.getReason());
+        }
+    }
+
     /**
      * Post data to given url
      *
@@ -111,32 +135,15 @@ public class RestClient {
             additionalHeaders.forEach(request::header);
 
             ContentResponse response = request.send();
-            int responseCode = response.getStatus();
-            switch (responseCode) {
-                case HttpStatus.OK_200, HttpStatus.CREATED_201:
-                    break;
-                case HttpStatus.BAD_REQUEST_400:
-                    throw new AuthenticationException("Bad request");
-                case HttpStatus.UNAUTHORIZED_401:
-                    throw new AuthenticationException("Invalid username or password");
-                case HttpStatus.PRECONDITION_FAILED_412:
-                    if (response.getReason().startsWith("Precondition")
-                            || response.getReason().startsWith("Verification Code")) {
-                        throw new AuthenticationException("Two factor authentication enabled, enter code");
-                    } else {
-                        throw new AuthenticationException("Invalid username or password");
-                    }
-                case HttpStatus.TOO_MANY_REQUESTS_429:
-                    throw new AuthenticationException("Account rate-limited");
-                default:
-                    throw new AuthenticationException(
-                            "Unhandled HTTP error: " + responseCode + " - " + response.getReason());
-            }
-
+            validateResponse(response);
             result = response.getContentAsString();
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+        } catch (ExecutionException | TimeoutException e) {
+            logger.warn("RestApi error in postRequest!", e);
+            throw new AuthenticationException("Communication error during POST request: " + e.getMessage());
+        } catch (InterruptedException e) {
             logger.warn("RestApi error in postRequest!", e);
             Thread.currentThread().interrupt();
+            throw new AuthenticationException("POST request was interrupted.");
         }
         return result;
     }
@@ -155,25 +162,15 @@ public class RestClient {
             additionalHeaders.forEach(request::header);
 
             ContentResponse response = request.send();
-            int responseCode = response.getStatus();
-            switch (responseCode) {
-                case HttpStatus.OK_200, HttpStatus.CREATED_201:
-                    break;
-                case HttpStatus.BAD_REQUEST_400:
-                    throw new AuthenticationException("Bad request");
-                case HttpStatus.UNAUTHORIZED_401:
-                    throw new AuthenticationException("Invalid username or password");
-                case HttpStatus.TOO_MANY_REQUESTS_429:
-                    throw new AuthenticationException("Account rate-limited");
-                default:
-                    throw new AuthenticationException(
-                            "Unhandled HTTP error: " + responseCode + " - " + response.getReason());
-            }
-
+            validateResponse(response);
             result = response.getContentAsString();
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+        } catch (ExecutionException | TimeoutException e) {
+            logger.warn("RestApi error in getRequest!", e);
+            throw new AuthenticationException("Communication error during GET request: " + e.getMessage());
+        } catch (InterruptedException e) {
             logger.warn("RestApi error in getRequest!", e);
             Thread.currentThread().interrupt();
+            throw new AuthenticationException("GET request was interrupted.");
         }
         return result;
     }
@@ -191,7 +188,7 @@ public class RestClient {
     public Tokens getTokens(String username, String password, String refreshToken, String twofactorCode,
             String hardwareId) throws AuthenticationException, JsonParseException {
         Map<String, String> additionalHeaders = new HashMap<>();
-        ParamBuilder pb = new ParamBuilder(false);
+        ParamBuilder pb = new ParamBuilder(true);
         pb.add("client_id", "ring_official_android");
         pb.add("scope", "client");
         if (refreshToken.isBlank()) {
@@ -237,7 +234,48 @@ public class RestClient {
     }
 
     /**
-     * Get get the Ring devices
+     * Get the timestamp of the last camera snapshot
+     *
+     * @param id the device id of the Ring cameras
+     * @return a long of the timestamp of the last snapsnot
+     * @throws AuthenticationException when request is invalid.
+     */
+    public long getSnapshotTimestamp(String deviceId, Tokens tokens) throws AuthenticationException {
+        String input = "{\"doorbot_ids\":[" + deviceId + "]}";
+        String jsonResult = postRequest(ApiConstants.URL_SNAPSHOT_TIMESTAMPS, input, Map.of(), tokens);
+        SessionTimestampTO sessionTimestamp = Objects
+                .requireNonNull(gson.fromJson(jsonResult, SessionTimestampTO.class));
+        if (sessionTimestamp.data.length > 0) {
+            return sessionTimestamp.data[0].timestamp;
+        } else {
+            return -1;
+        }
+    }
+
+    /**
+     * Get the image from the camera
+     *
+     * @param id the device id of the Ring cameras
+     * @return a byte array of the camera image
+     * @throws AuthenticationException when request is invalid.
+     */
+    public byte[] getSnapshot(String deviceId, Tokens tokens) throws AuthenticationException {
+        try {
+            ContentResponse response = httpClient.newRequest(ApiConstants.URL_SNAPSHOTS + deviceId)
+                    .header(HttpHeader.AUTHORIZATION.asString(), "Bearer " + tokens.accessToken()).send();
+
+            if (response.getStatus() == 200) {
+                return response.getContent();
+            } else {
+                throw new AuthenticationException("Failed to download snapshot: " + response.getStatus());
+            }
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            throw new AuthenticationException("Failed to download snapshot.");
+        }
+    }
+
+    /**
+     * Get the Ring devices
      *
      * @param tokens the tokens previously retrieved when authenticating.
      * @return the RingDevices instance filled with all available data.
@@ -280,39 +318,69 @@ public class RestClient {
                 return "";
             }
             if (retentionCount > 0 && Files.exists(path)) {
-                // get FileSystem object
-                FileSystem fs = path.getFileSystem();
-                String sep = fs.getSeparator();
-                String filename = event.doorbot.description.replace(" ", "") + "-" + event.kind + "-"
+                Path baseDirPath = path.toAbsolutePath().normalize();
+
+                String safeDescription = event.doorbot.description.replaceAll("[^a-zA-Z0-9\\-_]", "");
+                String safeKind = event.kind != null ? event.kind.replaceAll("[^a-zA-Z0-9\\-_]", "") : "unknown";
+
+                String filename = safeDescription + "-" + safeKind + "-"
                         + event.getCreatedAt().toString().replace(":", "-") + ".mp4";
-                String fullfilepath = filePath + (filePath.endsWith(sep) ? "" : sep) + filename;
+
+                Path targetPath = baseDirPath.resolve(filename).normalize();
+
+                if (!targetPath.startsWith(baseDirPath)) {
+                    logger.error("RingVideo: Path traversal attempt detected! Filename: {}", filename);
+                    return ""; // Abort the download
+                }
+
+                String fullfilepath = targetPath.toString();
                 logger.debug("fullfilepath = {}", fullfilepath);
-                path = Paths.get(fullfilepath);
+
+                // Reassign 'path' to the secure target for the rest of the method
+                path = targetPath;
+
                 boolean urlFound = false;
                 if (Files.notExists(path)) {
                     long eventId = event.id;
                     StringBuilder vidUrl = new StringBuilder();
                     vidUrl.append(ApiConstants.URL_RECORDING_START).append(eventId)
                             .append(ApiConstants.URL_RECORDING_END);
+
                     for (int i = 0; i < 10; i++) {
                         try {
                             String jsonResult = getRequest(vidUrl.toString(), Map.of(), tokens);
                             JsonObject obj = JsonParser.parseString(jsonResult).getAsJsonObject();
+
                             if (obj.get("url").getAsString().startsWith("http")) {
                                 URL url = new URI(obj.get("url").getAsString()).toURL();
-                                InputStream in = url.openStream();
-                                Files.copy(in, Paths.get(fullfilepath), StandardCopyOption.REPLACE_EXISTING);
-                                in.close();
-                                logger.info("fullfilepath.length() = {}", fullfilepath.length());
-                                if (!fullfilepath.isEmpty()) {
+
+                                // Explicit connection with timeouts to prevent thread starvation
+                                java.net.URLConnection connection = url.openConnection();
+                                connection.setConnectTimeout(10000); // 10 seconds
+                                connection.setReadTimeout(30000); // 30 seconds
+
+                                try (InputStream in = connection.getInputStream()) {
+                                    Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
+                                }
+
+                                if (Files.exists(path)) {
                                     urlFound = true;
-                                    break;
+                                    break; // Success: instantly exit the loop
                                 }
                             }
-                        } catch (AuthenticationException | URISyntaxException e) {
-                            logger.debug("RingVideo: Error downloading file: {}", e.getMessage());
-                        } finally {
-                            Thread.sleep(15000);
+                        } catch (AuthenticationException | URISyntaxException | IOException e) {
+                            // Catching IOException here ensures timeouts trigger a retry, not a total abort
+                            logger.debug("RingVideo: Error downloading file on attempt {}: {}", i + 1, e.getMessage());
+                        }
+
+                        // Sleep only if the download failed and we are going to retry
+                        if (i < 9) {
+                            try {
+                                Thread.sleep(15000);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                throw ie;
+                            }
                         }
                     }
                 }
@@ -343,9 +411,35 @@ public class RestClient {
             } else {
                 return "";
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
             logger.warn("RingVideo: Unable to process request: {}", e.getMessage());
             return "";
+        }
+    }
+
+    public void sendCommand(String endpoint, Tokens tokens) throws AuthenticationException {
+        sendCommand(endpoint, HttpMethod.PUT, null, tokens);
+    }
+
+    public void sendCommand(String endpoint, HttpMethod httpMethod, @Nullable String payload, Tokens tokens)
+            throws AuthenticationException {
+        try {
+            Request request = httpClient.newRequest(endpoint);
+            request.method(httpMethod);
+            request.timeout(CONNECTION_TIMEOUT, TimeUnit.MILLISECONDS);
+            request.agent(ApiConstants.API_USER_AGENT);
+            request.header(HttpHeader.AUTHORIZATION.asString(), "Bearer " + tokens.accessToken());
+
+            if (payload != null) {
+                request.content(new StringContentProvider(payload), "application/json");
+            }
+            ContentResponse response = request.send();
+            validateResponse(response);
+        } catch (InterruptedException e) {
+            logger.warn("RestApi error in sendCommand!", e);
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | TimeoutException e) {
+            logger.warn("RestApi error in sendCommand!", e);
         }
     }
 }

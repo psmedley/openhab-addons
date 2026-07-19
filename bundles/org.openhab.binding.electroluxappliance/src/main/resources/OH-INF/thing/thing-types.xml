@@ -435,7 +435,7 @@
 		<state readOnly="true">
 			<options>
 				<option value="UNAVAILABLE">Unavailable</option>
-				<option value="ANTICREASE">Anicrease</option>
+				<option value="ANTICREASE">Anticrease</option>
 				<option value="DRAIN">Drain</option>
 				<option value="DRY">Dry</option>
 				<option value="PREWASH">Prewash</option>
@@ -593,7 +593,7 @@
 		<item-type>Switch</item-type>
 		<label>Powered On</label>
 		<description>The device's state running state.</description>
-		<category>Temperature</category>
+		<category>Switch</category>
 		<tags>
 			<tag>Switch</tag>
 			<tag>Mode</tag>

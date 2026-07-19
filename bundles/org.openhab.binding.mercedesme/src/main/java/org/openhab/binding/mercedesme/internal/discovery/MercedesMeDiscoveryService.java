@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.mercedesme.internal.discovery;
 
+import java.util.Locale;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -32,7 +33,8 @@ import org.osgi.service.component.annotations.Component;
  * @author Bernd Weymann - Add vin as representation property
  */
 @NonNullByDefault
-@Component(service = DiscoveryService.class, configurationPid = "discovery.mercedesme")
+@Component(service = { DiscoveryService.class,
+        MercedesMeDiscoveryService.class }, configurationPid = "discovery.mercedesme")
 public class MercedesMeDiscoveryService extends AbstractDiscoveryService {
 
     public MercedesMeDiscoveryService() {
@@ -60,7 +62,7 @@ public class MercedesMeDiscoveryService extends AbstractDiscoveryService {
             properties.put("vin", vin);
             thingDiscovered(DiscoveryResultBuilder.create(new ThingUID(ttuid, ac.getThing().getUID(), vin))
                     .withBridge(ac.getThing().getUID()).withProperties(properties).withRepresentationProperty("vin")
-                    .withLabel("Mercedes Benz " + ttuid.getId().toUpperCase()).build());
+                    .withLabel("Mercedes Benz " + ttuid.getId().toUpperCase(Locale.ROOT)).build());
         }
     }
 

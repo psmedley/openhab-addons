@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -12,12 +12,7 @@
  */
 package org.openhab.binding.shelly.internal;
 
-import static org.openhab.binding.shelly.internal.discovery.ShellyThingCreator.*;
-
-import java.util.Set;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.core.thing.ThingTypeUID;
 
 /**
  * The {@link ShellyBindingConstants} class defines common constants, which are
@@ -31,51 +26,6 @@ public class ShellyBindingConstants {
     public static final String VENDOR = "Shelly";
     public static final String BINDING_ID = "shelly";
     public static final String SYSTEM_ID = "system";
-
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_SHELLY1, THING_TYPE_SHELLY1L,
-            THING_TYPE_SHELLY1PM, THING_TYPE_SHELLYEM, THING_TYPE_SHELLY3EM, THING_TYPE_SHELLY2_RELAY,
-            THING_TYPE_SHELLY2_ROLLER, THING_TYPE_SHELLY25_RELAY, THING_TYPE_SHELLY25_ROLLER, THING_TYPE_SHELLY4PRO,
-            THING_TYPE_SHELLYPLUG, THING_TYPE_SHELLYPLUGS, THING_TYPE_SHELLYPLUGU1, THING_TYPE_SHELLYUNI,
-            THING_TYPE_SHELLYDIMMER, THING_TYPE_SHELLYDIMMER2, THING_TYPE_SHELLYIX3, THING_TYPE_SHELLYBULB,
-            THING_TYPE_SHELLYDUO, THING_TYPE_SHELLYVINTAGE, THING_TYPE_SHELLYDUORGBW, THING_TYPE_SHELLYRGBW2_COLOR,
-            THING_TYPE_SHELLYRGBW2_WHITE, THING_TYPE_SHELLYHT, THING_TYPE_SHELLYTRV, THING_TYPE_SHELLYSENSE,
-            THING_TYPE_SHELLYEYE, THING_TYPE_SHELLYSMOKE, THING_TYPE_SHELLYGAS, THING_TYPE_SHELLYFLOOD,
-            THING_TYPE_SHELLYDOORWIN, THING_TYPE_SHELLYDOORWIN2, THING_TYPE_SHELLYBUTTON1, THING_TYPE_SHELLYBUTTON2,
-            THING_TYPE_SHELLYMOTION,
-
-            // Shelly Plus
-            THING_TYPE_SHELLYPLUS1, THING_TYPE_SHELLYPLUS1PM, THING_TYPE_SHELLYPLUS2PM_RELAY,
-            THING_TYPE_SHELLYPLUS2PM_ROLLER, THING_TYPE_SHELLYPLUSI4, THING_TYPE_SHELLYPLUSI4DC,
-            THING_TYPE_SHELLYPLUSDIMMER10V, THING_TYPE_SHELLYPLUSUNI, THING_TYPE_SHELLYPLUSHT,
-            THING_TYPE_SHELLYPLUSHTG3, THING_TYPE_SHELLYPLUSSMOKE, THING_TYPE_SHELLYPLUSPLUGS,
-            THING_TYPE_SHELLYPLUSPLUGUS, THING_TYPE_SHELLYPLUSDIMMERUS, THING_TYPE_SHELLYPLUSRGBWPM,
-            THING_TYPE_SHELLYPLUSSTRIP, THING_TYPE_SHELLYPLUS1L, THING_TYPE_SHELLYPLUS2L, THING_TYPE_SHELLYPLUSSHUTTER,
-            THING_TYPE_SHELLYPLUSEM, THING_TYPE_SHELLYPLUS3EM63,
-
-            // Shelly Wall Display
-            THING_TYPE_SHELLYPLUSWALLDISPLAY,
-
-            // Shelly Plus Mini
-            THING_TYPE_SHELLYMINI_1, THING_TYPE_SHELLYMINI_PM, THING_TYPE_SHELLYMINI_1PM, THING_TYPE_SHELLYMINI_EM,
-
-            // Shelly Pro
-            THING_TYPE_SHELLYPRO1, THING_TYPE_SHELLYPRO1PM, THING_TYPE_SHELLYPRO1CB, THING_TYPE_SHELLYPRO2,
-            THING_TYPE_SHELLYPRO2PM_RELAY, THING_TYPE_SHELLYPRO2PM_ROLLER, THING_TYPE_SHELLYPRO3,
-            THING_TYPE_SHELLYPRO3EM, THING_TYPE_SHELLYPROEM50, THING_TYPE_SHELLYPRO4PM,
-
-            // Shelly BLU
-            THING_TYPE_SHELLYBLUBUTTON, THING_TYPE_SHELLYBLUDW, THING_TYPE_SHELLYBLUMOTION, THING_TYPE_SHELLYBLUHT,
-            THING_TYPE_SHELLYBLUGW,
-
-            // Other
-            THING_TYPE_SHELLYPROTECTED, THING_TYPE_SHELLYUNKNOWN);
-
-    public static final Set<ThingTypeUID> LIGHT_THING_TYPES = Set.of(THING_TYPE_SHELLYBULB, THING_TYPE_SHELLYDUO,
-            THING_TYPE_SHELLYRGBW2_COLOR, THING_TYPE_SHELLYRGBW2_WHITE, THING_TYPE_SHELLYDUORGBW,
-            THING_TYPE_SHELLYVINTAGE, THING_TYPE_SHELLYPLUSRGBWPM);
-
-    public static final Set<ThingTypeUID> BLU_SENSOR_THING_TYPES = Set.of(THING_TYPE_SHELLYBLUBUTTON,
-            THING_TYPE_SHELLYBLUDW, THING_TYPE_SHELLYBLUMOTION, THING_TYPE_SHELLYBLUHT, THING_TYPE_SHELLYBLUGW);
 
     // Thing Configuration Properties
     public static final String CONFIG_DEVICEIP = "deviceIp";
@@ -106,6 +56,27 @@ public class ShellyBindingConstants {
     public static final String PROPERTY_COAP_DESCR = "coapDeviceDescr";
     public static final String PROPERTY_COAP_VERSION = "coapVersion";
     public static final String PROPERTY_COIOTAUTO = "coiotAutoEnable";
+    public static final String PROPERTY_CHANNEL_SCHEMA_VERSION = "channelSchemaVersion";
+
+    /*
+     * Channel Groups Used at Runtime
+     *
+     * CHANNEL_GROUP_DEV_STATUS device Firmware, uptime, WiFi, heartbeat
+     * CHANNEL_GROUP_RELAY_CONTROL relay1..n Relay output, input, timers
+     * CHANNEL_GROUP_ROL_CONTROL roller Rollershutter, position, safety
+     * CHANNEL_GROUP_DIMMER_CONTROL dimmer Brightness
+     * CHANNEL_GROUP_LIGHT_CONTROL control Light power, color mode, timers
+     * CHANNEL_GROUP_COLOR_CONTROL color HSB, RGBW values
+     * CHANNEL_GROUP_WHITE_CONTROL white White brightness and temperature
+     * CHANNEL_GROUP_LIGHT_CHANNEL channel1..n RGBW2 individual white channels
+     * CHANNEL_GROUP_METER meter1..n Watts, kWh, voltage, current
+     * CHANNEL_GROUP_NMETER nmeter 3EM neutral current
+     * CHANNEL_GROUP_SENSOR sensors All environmental readings
+     * CHANNEL_GROUP_BATTERY battery Level, low-battery flag
+     * CHANNEL_GROUP_CONTROL control TRV mode, setpoint, boost
+     * CHANNEL_GROUP_STATUS status1..n Button/input events
+     *
+     */
 
     // Relay
     public static final String CHANNEL_GROUP_RELAY_CONTROL = "relay";
@@ -136,21 +107,27 @@ public class ShellyBindingConstants {
     // Power meter
     public static final String CHANNEL_GROUP_METER = "meter";
     public static final String CHANNEL_METER_CURRENTWATTS = "currentWatts";
+    public static final String CHANNEL_METER_CURRENTPOWER = "currentPower";
     public static final String CHANNEL_METER_LASTMIN = "lastPower";
-    public static final String CHANNEL_METER_LASTMIN1 = CHANNEL_METER_LASTMIN + "1";
+    public static final String CHANNEL_METER_LASTMIN1 = CHANNEL_METER_LASTMIN + "1"; // deprecated, use ENERGYAVG1MIN
+    public static final String CHANNEL_METER_ENERGYAVG1MIN = "energyAvg1Min";
     public static final String CHANNEL_METER_TOTALKWH = "totalKWH";
+    public static final String CHANNEL_METER_TOTALENERGY = "totalEnergy";
     public static final String CHANNEL_EMETER_TOTALRET = "returnedKWH";
-    public static final String CHANNEL_EMETER_REACTWATTS = "reactiveWatts";
+    public static final String CHANNEL_EMETER_RETURNEDENERGY = "returnedEnergy";
+    public static final String CHANNEL_EMETER_REACTWATTS = "reactiveWatts"; // deprecated, use CHANNEL_EMETER_REACTPOWER
+    public static final String CHANNEL_EMETER_REACTPOWER = "reactivePower";
+    public static final String CHANNEL_EMETER_APPARENT = "apparentPower";
     public static final String CHANNEL_EMETER_VOLTAGE = "voltage";
     public static final String CHANNEL_EMETER_CURRENT = "current";
     public static final String CHANNEL_EMETER_FREQUENCY = "frequency";
     public static final String CHANNEL_EMETER_PFACTOR = "powerFactor";
-    public static final String CHANNEL_EMETER_RESETTOTAL = "resetTotals";
     public static final String CHANNEL_GROUP_NMETER = "nmeter";
     public static final String CHANNEL_NMETER_CURRENT = "ncurrent";
     public static final String CHANNEL_NMETER_IXSUM = "ixsum";
     public static final String CHANNEL_NMETER_MISMATCH = "nmismatch";
-    public static final String CHANNEL_NMETER_MTRESHHOLD = "nmTreshhold";
+    public static final String CHANNEL_NMETER_MTRESHHOLD = "nmTreshhold"; // deprecated, use CHANNEL_NMETER_THRESHOLD
+    public static final String CHANNEL_NMETER_THRESHOLD = "nmThreshold";
 
     public static final String CHANNEL_GROUP_SENSOR = "sensors";
     public static final String CHANNEL_SENSOR_TEMP = "temperature";
@@ -173,6 +150,13 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_SENSOR_SLEEPTIME = "sensorSleepTime";
     public static final String CHANNEL_SENSOR_ALARM_STATE = "alarmState";
     public static final String CHANNEL_SENSOR_ERROR = "lastError";
+    public static final String CHANNEL_SENSOR_ROTATIONX = "rotationX"; // BLU Remote
+    public static final String CHANNEL_SENSOR_ROTATIONY = "rotationY"; // BLU Remote
+    public static final String CHANNEL_SENSOR_ROTATIONZ = "rotationZ"; // BLU Remote
+    public static final String CHANNEL_SENSOR_CHANNEL = "channel"; // BLU Remote
+    public static final String CHANNEL_SENSOR_STEPS = "steps"; // BLU Remote
+    public static final String CHANNEL_SENSOR_DIRECTION = "direction"; // BLU Remote
+    public static final String CHANNEL_SENSOR_DISTANCE = "distance"; // BLU DIstance
 
     // TRV
     public static final String CHANNEL_CONTROL_SETTEMP = "targetTemp";
@@ -235,16 +219,23 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_DEVST_WAKEUP = "wakeupReason";
     public static final String CHANNEL_DEVST_ALARM = "alarm";
     public static final String CHANNEL_DEVST_ACCUWATTS = "accumulatedWatts";
-    public static final String CHANNEL_DEVST_ACCUTOTAL = "accumulatedWTotal";
-    public static final String CHANNEL_DEVST_ACCURETURNED = "accumulatedReturned";
-    public static final String CHANNEL_DEVST_TOTALKWH = "totalKWH";
-    public static final String CHANNEL_DEVST_RESETTOTAL = CHANNEL_EMETER_RESETTOTAL;
+    public static final String CHANNEL_DEVST_ACCUMULATEDPOWER = "accumulatedPower";
+    public static final String CHANNEL_DEVST_ACCURETURNED = "accumulatedReturned"; // deprecated, use
+                                                                                   // CHANNEL_DEVST_ACCURETURNEDENERGY
+    public static final String CHANNEL_DEVST_ACCURETURNEDENERGY = "accumulatedReturnedEnergy";
+    public static final String CHANNEL_DEVST_ACCUAPPARENT = "accumulatedApparent";
+    public static final String CHANNEL_DEVST_ACCUTOTAL = "accumulatedWTotal"; // deprecated, use
+                                                                              // CHANNEL_DEVST_TOTALENERGY
+    public static final String CHANNEL_DEVST_TOTALKWH = "totalKWH"; // deprecated (device group), use
+                                                                    // CHANNEL_DEVST_TOTALENERGY
+    public static final String CHANNEL_DEVST_TOTALENERGY = "totalEnergy";
 
     public static final String CHANNEL_DEVST_CHARGER = "charger";
     public static final String CHANNEL_DEVST_UPDATE = "updateAvailable";
     public static final String CHANNEL_DEVST_SELFTTEST = "selfTest";
     public static final String CHANNEL_DEVST_VOLTAGE = "supplyVoltage";
     public static final String CHANNEL_DEVST_CALIBRATED = "calibrated";
+    public static final String CHANNEL_DEVST_FIRMWARE = "firmware";
 
     public static final String CHANNEL_LED_STATUS_DISABLE = "statusLed";
     public static final String CHANNEL_LED_POWER_DISABLE = "powerLed";
@@ -297,13 +288,16 @@ public class ShellyBindingConstants {
     // Formatting: Number of scaling digits
     public static final int DIGITS_NONE = 0;
     public static final int DIGITS_WATT = 2;
+    public static final int DIGITS_VAR = 2;
     public static final int DIGITS_KWH = 3;
-    public static final int DIGITS_VOLT = 1;
+    public static final int DIGITS_VOLT = 2;
     public static final int DIGITS_AMPERE = 3;
-    public static final int DIGITS_FREQUENCY = 1;
+    public static final int DIGITS_FREQUENCY = 2;
     public static final int DIGITS_TEMP = 1;
     public static final int DIGITS_LUX = 0;
     public static final int DIGITS_PERCENT = 1;
+    public static final int DIGITS_ROTATION = 1;
+    public static final int DIGITS_DISTANCE = 0;
 
     public static final int SHELLY_API_TIMEOUT_MS = 10000;
     public static final int UPDATE_STATUS_INTERVAL_SECONDS = 3; // check for updates every x sec
@@ -315,4 +309,6 @@ public class ShellyBindingConstants {
 
     public static final String BUNDLE_RESOURCE_SNIPLETS = "sniplets"; // where to find code sniplets in the bundle
     public static final String BUNDLE_RESOURCE_SCRIPTS = "scripts"; // where to find scrips in the bundle
+
+    public static final int DEFAULT_LOCAL_PORT = 8080;
 }

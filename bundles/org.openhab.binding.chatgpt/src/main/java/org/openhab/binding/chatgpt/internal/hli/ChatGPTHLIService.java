@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -68,6 +68,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 /**
  * The {@link ChatGPTHLIService} is responsible for handling the human language interpretation using ChatGPT.
@@ -96,7 +97,6 @@ public class ChatGPTHLIService implements ThingHandlerService, HumanLanguageInte
 
         try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("/json/tools.json");
                 InputStreamReader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-
             ObjectMapper mapper = new ObjectMapper();
             JsonNode node = mapper.readTree(reader);
 
@@ -211,7 +211,6 @@ public class ChatGPTHLIService implements ThingHandlerService, HumanLanguageInte
         this.lastMessageTime = LocalTime.now();
 
         if (chatResponse.getUsage().getTotalTokens() > this.config.contextThreshold) {
-
             Integer lastUserMessageIndex = null;
             for (int i = messages.size() - 1; i >= 0; i--) {
                 if (messages.get(i).getRole().equals(ChatMessage.Role.USER.value())) {
@@ -330,8 +329,7 @@ public class ChatGPTHLIService implements ThingHandlerService, HumanLanguageInte
         chatRequestBody.setTools(this.tools);
         chatRequestBody.setMessages(this.messages);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setSerializationInclusion(Include.NON_NULL);
+        ObjectMapper objectMapper = JsonMapper.builder().serializationInclusion(Include.NON_NULL).build();
 
         try {
             return objectMapper.writeValueAsString(chatRequestBody);

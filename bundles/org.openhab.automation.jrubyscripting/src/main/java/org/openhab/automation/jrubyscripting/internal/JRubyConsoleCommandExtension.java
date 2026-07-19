@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -14,6 +14,7 @@ package org.openhab.automation.jrubyscripting.internal;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,6 +27,7 @@ import java.util.SortedSet;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
@@ -58,8 +60,8 @@ import org.slf4j.LoggerFactory;
 public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtension implements ConsoleCommandCompleter {
     private final Logger logger = LoggerFactory.getLogger(JRubyConsoleCommandExtension.class);
 
-    private final String DEFAULT_CONSOLE_PATH = "openhab/console/";
-    private final String OPENHAB_SCRIPTING_GEM = "gem \"openhab-scripting\", \"~> 5.0\"";
+    private static final String DEFAULT_CONSOLE_PATH = "openhab/console/";
+    private static final String OPENHAB_SCRIPTING_GEM = "gem \"openhab-scripting\", \"~> 5.0\"";
 
     private static final String INFO = "info";
     private static final String CONSOLE = "console";
@@ -97,7 +99,7 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
 
     @Override
     public List<String> getUsages() {
-        return Arrays.asList( //
+        return List.of( //
                 buildCommandUsage(INFO, "displays information about JRuby Scripting add-on"), //
                 buildCommandUsage(CONSOLE + " [--list|-l|--help|-h] | [script] [options]",
                         "starts an interactive JRuby console"), //
@@ -173,7 +175,7 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
 
     private void info(Console console) {
         File gemfile = jRubyScriptEngineFactory.getConfiguration().getGemfile();
-        final String PRINT_VERSION_NUMBERS = """
+        final String printVersionNumbers = """
                 library_version = defined?(OpenHAB::DSL::VERSION) && OpenHAB::DSL::VERSION
 
                 puts "JRuby #{JRUBY_VERSION}"
@@ -184,7 +186,7 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
                 puts "ENV['BUNDLE_GEMFILE']: #{ENV['BUNDLE_GEMFILE']}"
                     """);
 
-        executeWithFullJRuby(console, engine -> engine.eval(PRINT_VERSION_NUMBERS));
+        executeWithFullJRuby(console, engine -> engine.eval(printVersionNumbers));
         console.println("Script path: " + scriptFileWatcher.getWatchPath());
         console.println("");
         console.println("JRuby Scripting Add-on Configuration:");
@@ -270,7 +272,7 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
                         for (Map.Entry<String, String> consoleScript : consoles.entrySet()) {
                             String name = consoleScript.getKey();
                             String description = consoleScript.getValue();
-                            if (defaultConsole.equals(DEFAULT_CONSOLE_PATH + name) || defaultConsole.equals(name)) {
+                            if ((DEFAULT_CONSOLE_PATH + name).equals(defaultConsole) || name.equals(defaultConsole)) {
                                 description = description + " (default)";
                                 defaultConsoleInRegistry = true;
                             }
@@ -312,7 +314,7 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
         });
     }
 
-    synchronized private void bundler(Console console, String[] args) {
+    private synchronized void bundler(Console console, String[] args) {
         final File gemfile = jRubyScriptEngineFactory.getConfiguration().getGemfile();
         boolean bundleInit = args.length >= 1 && "init".equals(args[0]);
 
@@ -331,7 +333,7 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
             return;
         }
 
-        final String BUNDLER = """
+        final String bundler = """
                 require "jruby"
                 JRuby.runtime.instance_config.update_native_env_enabled = false
 
@@ -363,7 +365,7 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
         try {
             Object result = executeWithPlainJRuby(console, engine -> {
                 engine.put(ScriptEngine.ARGV, args);
-                return engine.eval(BUNDLER);
+                return engine.eval(bundler);
             });
             logger.debug("Bundler result: {}", result);
             // A null result indicates a successful creation of Gemfile.
@@ -409,15 +411,15 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
         Files.write(gemfilePath, outputGemfile);
     }
 
-    synchronized private void gem(Console console, String[] args) {
-        final String GEM = """
+    private synchronized void gem(Console console, String[] args) {
+        final String gem = """
                 require "rubygems/gem_runner"
                 Gem::GemRunner.new.run ARGV
                     """;
 
         executeWithPlainJRuby(console, engine -> {
             engine.put(ScriptEngine.ARGV, args);
-            engine.eval(GEM);
+            engine.eval(gem);
             return null;
         });
     }
@@ -500,9 +502,22 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
     }
 
     /*
+     * Configure the engine to redirect output to the provided console.
+     */
+    private void configureEngineConsoleOutput(ScriptEngine engine, @Nullable Console console) {
+        if (console != null) {
+            ScriptContext context = engine.getContext();
+            Writer errorWriter = context.getErrorWriter();
+            if (errorWriter != null) {
+                context.setErrorWriter(new ConsoleWriter(errorWriter));
+            }
+        }
+    }
+
+    /*
      * Create a full openHAB-managed JRuby engine with openHAB scoped variables
      * including any injected required gems.
-     * 
+     *
      * This will run the script with the helper library if configured.
      */
     private @Nullable Object executeWithFullJRuby(Console console, EngineEvalFunction process) {
@@ -516,6 +531,7 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
         }
         ScriptEngine engine = container.getScriptEngine();
         try {
+            configureEngineConsoleOutput(engine, console);
             printLoadingMessage(console, false);
             return process.apply(engine);
         } catch (ScriptException e) {
@@ -535,6 +551,7 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
             if (engine == null) {
                 throw new ScriptException("Unable to create JRuby script engine.");
             }
+            configureEngineConsoleOutput(engine, console);
             return process.apply(engine);
         } catch (ScriptException e) {
             if (console != null) {
@@ -543,6 +560,70 @@ public class JRubyConsoleCommandExtension extends AbstractConsoleCommandExtensio
                 logger.warn("Error: {}", e.getMessage());
             }
             return null;
+        }
+    }
+
+    // ============================================================================
+    // Inner Classes
+    // ============================================================================
+
+    /**
+     * A Writer wrapper that normalizes LF line endings to CRLF while preserving all other characters.
+     */
+    static class ConsoleWriter extends Writer {
+        private final Writer delegate;
+        private boolean previousWasCarriageReturn = false;
+        private boolean closed = false;
+
+        ConsoleWriter(Writer delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(char @Nullable [] c, int off, int len) throws IOException {
+            if (closed) {
+                throw new IOException("Writer is closed");
+            }
+            if (c != null) {
+                for (int index = off; index < off + len; index++) {
+                    char ch = c[index];
+                    if (previousWasCarriageReturn) {
+                        if (ch == '\n') {
+                            delegate.write('\r');
+                            delegate.write('\n');
+                            previousWasCarriageReturn = false;
+                            continue;
+                        }
+                        delegate.write('\r');
+                        previousWasCarriageReturn = false;
+                    }
+
+                    if (ch == '\r') {
+                        previousWasCarriageReturn = true;
+                    } else if (ch == '\n') {
+                        delegate.write('\r');
+                        delegate.write('\n');
+                    } else {
+                        delegate.write(ch);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            if (previousWasCarriageReturn) {
+                delegate.write('\r');
+                previousWasCarriageReturn = false;
+            }
+            delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            flush();
+            closed = true;
+            delegate.close();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -18,15 +18,10 @@ import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import javax.measure.Unit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -45,6 +40,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLightStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLightChannel;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
+import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
@@ -67,27 +63,27 @@ import org.osgi.service.component.annotations.Reference;
 @Component(service = ShellyChannelDefinitions.class)
 public class ShellyChannelDefinitions {
 
-    public static final String ITEMT_STRING = "String";
-    public static final String ITEMT_NUMBER = "Number";
-    public static final String ITEMT_SWITCH = "Switch";
-    public static final String ITEMT_CONTACT = "Contact";
-    public static final String ITEMT_ROLLER = "Rollershutter";
-    public static final String ITEMT_DIMMER = "Dimmer";
+    public static final String ITEMT_STRING = "String"; // Text, event types, modes
+    public static final String ITEMT_NUMBER = "Number"; // Plain dimensionless number
+    public static final String ITEMT_SWITCH = "Switch"; // On/Off
+    public static final String ITEMT_CONTACT = "Contact"; // Contact state Door/window sensors
+    public static final String ITEMT_ROLLER = "Rollershutter"; // Roller shutter control
+    public static final String ITEMT_DIMMER = "Dimmer"; // Brightness (0–100%)
     public static final String ITEMT_LOCATION = "Location";
     public static final String ITEMT_DATETIME = "DateTime";
-    public static final String ITEMT_TEMP = "Number:Temperature";
+    public static final String ITEMT_TEMP = "Number:Temperature"; // Temperature with unit
     public static final String ITEMT_LUX = "Number:Illuminance";
-    public static final String ITEMT_POWER = "Number:Power";
-    public static final String ITEMT_ENERGY = "Number:Energy";
-    public static final String ITEMT_VOLT = "Number:ElectricPotential";
-    public static final String ITEMT_AMP = "Number:ElectricCurrent";
+    public static final String ITEMT_POWER = "Number:Power"; // Watts
+    public static final String ITEMT_ENERGY = "Number:Energy"; // kWh
+    public static final String ITEMT_VOLT = "Number:ElectricPotential"; // Volts
+    public static final String ITEMT_AMP = "Number:ElectricCurrent"; // Amperes
     public static final String ITEMT_FREQ = "Number:Frequency";
-    public static final String ITEMT_ANGLE = "Number:Angle";
-    public static final String ITEMT_DISTANCE = "Number:Length";
+    public static final String ITEMT_ANGLE = "Number:Angle"; // Degrees (tilt, rotation)
+    public static final String ITEMT_DISTANCE = "Number:Length"; // Meters
     public static final String ITEMT_SPEED = "Number:Speed";
     public static final String ITEMT_VOLUME = "Number:Volume";
-    public static final String ITEMT_TIME = "Number:Time";
-    public static final String ITEMT_PERCENT = "Number:Dimensionless";
+    public static final String ITEMT_TIME = "Number:Time"; // Seconds
+    public static final String ITEMT_PERCENT = "Number:Dimensionless"; // 0–100% (battery, humidity)
 
     // shortcuts to avoid line breaks (make code more readable)
     private static final String CHGR_DEVST = CHANNEL_GROUP_DEV_STATUS;
@@ -125,6 +121,52 @@ public class ShellyChannelDefinitions {
     public ShellyChannelDefinitions(@Reference ShellyTranslationProvider translationProvider) {
         ShellyTranslationProvider m = translationProvider;
 
+        /*
+         * Channel registry - Design Principle
+         *
+         * Channels are **not** declared statically in thing-type XML. They are added to the thing
+         * programmatically after the first successful device status read.
+         *
+         * This allows:
+         *
+         * - Conditional channels based on firmware/settings (e.g. autoOn timer only if the
+         * device actually reports autoOn in its settings)
+         * - Indexed channels for multi-relay/multi-meter devices (relay1, relay2, meter2)
+         * - Add-on sensor channels only when an add-on module is physically connected
+         *
+         *
+         * Channel Registry
+         *
+         * CHANNEL_DEFINITIONS is a static ChannelMap populated once at OSGi activation.
+         * Each entry maps a group#channel key to a ShellyChannel descriptor:
+         *
+         * new ShellyChannel(translationProvider, groupId, channelId, channelTypeId, itemType)
+         *
+         * The channelTypeId references either a system channel type (e.g. system:power) or
+         * a binding-specific type defined in device.xml (e.g. meterWatts).
+         *
+         * Dynamic Channel Creation - All createXXX() methods follow the same pattern:
+         *
+         * public static Map<String, Channel> createRelayChannels(Thing thing,
+         * ShellyDeviceProfile profile, ShellySettingsRelay rstatus, int idx) {
+         * Map<String, Channel> add = new LinkedHashMap<>();
+         * String group = profile.getControlGroup(idx); // "relay1", "relay2", ...
+         *
+         * // Only add a channel if the device actually reports the field
+         * addChannel(thing, add, getBool(rs.isValid), group, CHANNEL_OUTPUT);
+         * addChannel(thing, add, rs.autoOn != null, group, CHANNEL_TIMER_AUTOON);
+         * addChannel(thing, add, rs.autoOff != null, group, CHANNEL_TIMER_AUTOOFF);
+         * ...
+         * return add;
+         * }
+         *
+         * addChannel(thing, add, condition, group, channelId) creates a Channel from the
+         * type and item type registered in CHANNEL_DEFINITIONS, and inserts it into add only
+         * when condition is true and the channel does not already exist on the thing.
+         *
+         * The collected maps are merged and applied in ShellyBaseHandler.updateChannelDefinitions():
+         */
+
         // Device
         CHANNEL_DEFINITIONS
                 // Device
@@ -133,10 +175,13 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ITEMP, "system:indoor-temperature", ITEMT_TEMP))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_WAKEUP, "sensorWakeup", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCUWATTS, "meterAccuWatts", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCUMULATEDPOWER, "accumulatedPower", ITEMT_POWER))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCUTOTAL, "meterAccuTotal", ITEMT_ENERGY))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_TOTALKWH, "totalKWH", ITEMT_ENERGY))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_TOTALENERGY, "totalEnergy", ITEMT_ENERGY))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCURETURNED, "meterAccuReturned", ITEMT_ENERGY))
-                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_RESETTOTAL, "meterResetTotals", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCURETURNEDENERGY, "accumulatedReturnedEnergy",
+                        ITEMT_ENERGY))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_ACCUAPPARENT, "meterAccuApparent", ITEMT_POWER))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_VOLTAGE, "supplyVoltage", ITEMT_VOLT))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_CHARGER, "charger", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_LED_STATUS_DISABLE, "ledStatusDisable", ITEMT_SWITCH))
@@ -146,10 +191,11 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_HEARTBEAT, "heartBeat", ITEMT_DATETIME))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_UPDATE, "updateAvailable", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_CALIBRATED, "calibrated", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_FIRMWARE, "deviceFirmware", ITEMT_STRING))
 
                 // Relay
                 .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT_NAME, "outputName", ITEMT_STRING))
-                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT, "system:power", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT, "relayOutput", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_BUTTON_TRIGGER, "system:button", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_STATUS_EVENTTYPE, "lastEvent", ITEMT_STRING))
@@ -196,23 +242,30 @@ public class ShellyChannelDefinitions {
 
                 // Power Meter
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_CURRENTWATTS, "meterWatts", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_CURRENTPOWER, "currentPower", ITEMT_POWER))
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_TOTALKWH, "meterTotal", ITEMT_ENERGY))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_TOTALENERGY, "totalEnergy", ITEMT_ENERGY))
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_LASTMIN1, "lastPower1", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_METER_ENERGYAVG1MIN, "energyAvg1Min", ITEMT_ENERGY))
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_LAST_UPDATE, "lastUpdate", ITEMT_DATETIME))
 
                 // EMeter
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_TOTALRET, "meterReturned", ITEMT_ENERGY))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_RETURNEDENERGY, "meterReturnedEnergy",
+                        ITEMT_ENERGY))
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_REACTWATTS, "meterReactive", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_REACTPOWER, "meterReactivePower", ITEMT_POWER))
+                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_APPARENT, "meterApparentPower", ITEMT_POWER))
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_VOLTAGE, "meterVoltage", ITEMT_VOLT))
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_CURRENT, "meterCurrent", ITEMT_AMP))
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_PFACTOR, "meterPowerFactor", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_FREQUENCY, "meterFrequency", ITEMT_FREQ))
-                .add(new ShellyChannel(m, CHGR_METER, CHANNEL_EMETER_RESETTOTAL, "meterResetTotals", ITEMT_SWITCH))
 
                 // 3EM: neutral current (emeter_n)
                 .add(new ShellyChannel(m, CHGR_EMN, CHANNEL_NMETER_CURRENT, "ncurrent", ITEMT_AMP))
                 .add(new ShellyChannel(m, CHGR_EMN, CHANNEL_NMETER_IXSUM, "ixsum", ITEMT_AMP))
                 .add(new ShellyChannel(m, CHGR_EMN, CHANNEL_NMETER_MTRESHHOLD, "nmTreshhold", ITEMT_AMP))
+                .add(new ShellyChannel(m, CHGR_EMN, CHANNEL_NMETER_THRESHOLD, "nmThreshold", ITEMT_AMP))
                 .add(new ShellyChannel(m, CHGR_EMN, CHANNEL_NMETER_MISMATCH, "nmismatch", ITEMT_SWITCH))
 
                 // Sensors
@@ -239,6 +292,15 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_LAST_UPDATE, "lastUpdate", ITEMT_DATETIME))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_SLEEPTIME, "sensorSleepTime", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSE_KEY, "senseKey", ITEMT_STRING)) // Sense
+
+                // BLU Remote
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_CHANNEL, "sensorChannel", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ROTATIONX, "sensorRotationX", ITEMT_ANGLE))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ROTATIONY, "sensorRotationY", ITEMT_ANGLE))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ROTATIONZ, "sensorRotationZ", ITEMT_ANGLE))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_DIRECTION, "sensorDirection", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_STEPS, "sensorSteps", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_DISTANCE, "sensorDistance", ITEMT_DISTANCE))
 
                 // Button/ix3
                 .add(new ShellyChannel(m, CHGR_STATUS, CHANNEL_INPUT, "inputState", ITEMT_SWITCH))
@@ -277,8 +339,8 @@ public class ShellyChannelDefinitions {
     }
 
     public static @Nullable ShellyChannel getDefinition(String channelName) throws IllegalArgumentException {
-        String group = substringBefore(channelName, "#");
-        String channel = substringAfter(channelName, "#");
+        String group = substringBefore(channelName, ChannelUID.CHANNEL_GROUP_SEPARATOR);
+        String channel = substringAfter(channelName, ChannelUID.CHANNEL_GROUP_SEPARATOR);
 
         if (group.startsWith(CHANNEL_GROUP_METER)) {
             group = CHANNEL_GROUP_METER; // map meter1..n to meter
@@ -300,7 +362,7 @@ public class ShellyChannelDefinitions {
             channel = CHANNEL_STATUS_EVENTCOUNT;
         }
 
-        String channelId = group + "#" + channel;
+        String channelId = group + ChannelUID.CHANNEL_GROUP_SEPARATOR + channel;
         return CHANNEL_DEFINITIONS.get(channelId);
     }
 
@@ -312,6 +374,8 @@ public class ShellyChannelDefinitions {
     public static Map<String, Channel> createDeviceChannels(final Thing thing, final ShellyDeviceProfile profile,
             final ShellySettingsStatus status) {
         Map<String, Channel> add = new LinkedHashMap<>();
+
+        addChannel(thing, add, !profile.fwVersion.isEmpty() || profile.isBlu, CHGR_DEVST, CHANNEL_DEVST_FIRMWARE);
 
         addChannel(thing, add, profile.settings.name != null, CHGR_DEVST, CHANNEL_DEVST_NAME);
         addChannel(thing, add, !profile.gateway.isEmpty() || profile.isBlu, CHGR_DEVST, CHANNEL_DEVST_GATEWAY);
@@ -330,14 +394,16 @@ public class ShellyChannelDefinitions {
         }
         addChannel(thing, add, profile.settings.sleepTime != null, CHGR_SENSOR, CHANNEL_SENSOR_SLEEPTIME);
 
-        // If device has more than 1 meter the channel accumulatedWatts receives the accumulated value
-        boolean accuChannel = profile.is3EM
-                || (profile.hasRelays && profile.numMeters > 1 && !profile.isRoller && !profile.isRGBW2);
+        // Any multi-meter device (relay or pure meter like ProEM50) gets device-level accumulated channels
+        boolean accuChannel = profile.numMeters > 1 && !profile.isRoller && !profile.isRGBW2;
         addChannel(thing, add, accuChannel, CHGR_DEVST, CHANNEL_DEVST_ACCUWATTS);
         addChannel(thing, add, accuChannel, CHGR_DEVST, CHANNEL_DEVST_ACCUTOTAL);
-        addChannel(thing, add, accuChannel, CHGR_DEVST, CHANNEL_DEVST_TOTALKWH);
-        addChannel(thing, add, accuChannel && (status.emeters != null), CHGR_DEVST, CHANNEL_DEVST_ACCURETURNED);
-        addChannel(thing, add, profile.is3EM, CHGR_DEVST, CHANNEL_DEVST_RESETTOTAL); // 3EM
+        // Gate returned/apparent totals on the device actually being a dedicated EMeter (3EM or EM50).
+        // Relay-PM devices (2PM, Plus 1PM) have status.emeters but never populate totalReturned or
+        // apparentPower, so these channels would be phantom (created but permanently UNDEF).
+        boolean hasReturnedEnergy = accuChannel && (profile.is3EM || profile.isEM50);
+        addChannel(thing, add, hasReturnedEnergy, CHGR_DEVST, CHANNEL_DEVST_ACCURETURNED);
+        addChannel(thing, add, hasReturnedEnergy, CHGR_DEVST, CHANNEL_DEVST_ACCUAPPARENT);
         addChannel(thing, add, status.voltage != null || profile.settings.supplyVoltage != null, CHGR_DEVST,
                 CHANNEL_DEVST_VOLTAGE);
         addChannel(thing, add,
@@ -367,7 +433,7 @@ public class ShellyChannelDefinitions {
         List<ShellySettingsRelay> relays = profile.settings.relays;
         if (relays != null) {
             ShellySettingsRelay rs = relays.get(idx);
-            addChannel(thing, add, rs.ison != null, group, CHANNEL_OUTPUT);
+            addChannel(thing, add, rs.isValid == null || rs.isValid, group, CHANNEL_OUTPUT);
             addChannel(thing, add, rs.name != null, group, CHANNEL_OUTPUT_NAME);
 
             boolean timer = rs.hasTimer != null || rstatus.hasTimer != null; // Dimmer 1/2 have
@@ -390,19 +456,22 @@ public class ShellyChannelDefinitions {
             addChannel(thing, add, addon, CHGR_SENSOR,
                     CHANNEL_ESENSOR_INPUT + (profile.settings.extSwitch.input0.relayNum + 1));
         }
-        if (profile.status.extTemperature != null) {
-            addChannel(thing, add, profile.status.extTemperature.sensor1 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP1);
-            addChannel(thing, add, profile.status.extTemperature.sensor2 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP2);
-            addChannel(thing, add, profile.status.extTemperature.sensor3 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP3);
-            addChannel(thing, add, profile.status.extTemperature.sensor4 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP4);
-            addChannel(thing, add, profile.status.extTemperature.sensor5 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP5);
+        ShellyStatusSensor.ShellyExtTemperature extTemp = profile.status.extTemperature;
+        if (extTemp != null) {
+            addChannel(thing, add, extTemp.sensor1 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP1);
+            addChannel(thing, add, extTemp.sensor2 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP2);
+            addChannel(thing, add, extTemp.sensor3 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP3);
+            addChannel(thing, add, extTemp.sensor4 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP4);
+            addChannel(thing, add, extTemp.sensor5 != null, CHGR_SENSOR, CHANNEL_ESENSOR_TEMP5);
         }
-        addChannel(thing, add, profile.status.extHumidity != null && profile.status.extHumidity.sensor1 != null,
-                CHGR_SENSOR, CHANNEL_ESENSOR_HUMIDITY);
+        ShellyStatusSensor.ShellyExtHumidity extHum = profile.status.extHumidity;
+        addChannel(thing, add, extHum != null && extHum.sensor1 != null, CHGR_SENSOR, CHANNEL_ESENSOR_HUMIDITY);
 
         addChannel(thing, add, profile.status.extVoltage != null, CHGR_SENSOR, CHANNEL_ESENSOR_VOLTAGE);
         addChannel(thing, add, profile.status.extDigitalInput != null, CHGR_SENSOR, CHANNEL_ESENSOR_DIGITALINPUT);
         addChannel(thing, add, profile.status.extAnalogInput != null, CHGR_SENSOR, CHANNEL_ESENSOR_ANALOGINPUT);
+
+        addChannel(thing, add, ShellyComponents.hasAddon(profile.status), CHGR_SENSOR, CHANNEL_LAST_UPDATE);
     }
 
     public static Map<String, Channel> createDimmerChannels(final Thing thing, final ShellyDeviceProfile profile,
@@ -455,7 +524,8 @@ public class ShellyChannelDefinitions {
             for (int i = 0; i < profile.numInputs; i++) {
                 String group = profile.getInputGroup(i);
                 String suffix = profile.getInputSuffix(i); // multi ? String.valueOf(i + 1) : "";
-                addChannel(thing, add, !profile.isButton, group, CHANNEL_INPUT + suffix);
+                addChannel(thing, add, !profile.isBlu && !profile.isButton && !profile.isMultiButton, group,
+                        CHANNEL_INPUT + suffix);
                 addChannel(thing, add, true, group,
                         (!profile.isRoller ? CHANNEL_BUTTON_TRIGGER + suffix : CHANNEL_EVENT_TRIGGER));
                 if (profile.inButtonMode(i)) {
@@ -479,7 +549,7 @@ public class ShellyChannelDefinitions {
         addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_CONTROL);
         addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE);
         addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER);
-        addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS);
+        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS);
         addChannel(thing, add, roller.stopReason != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR);
         addChannel(thing, add, roller.safetySwitch != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_SAFETY);
 
@@ -487,7 +557,7 @@ public class ShellyChannelDefinitions {
         if (handler != null) {
             ShellySettingsGlobal settings = handler.getProfile().settings;
             if (getBool(settings.favoritesEnabled) && settings.favorites != null) {
-                addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV);
+                addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV);
             }
         }
 
@@ -496,43 +566,75 @@ public class ShellyChannelDefinitions {
         return add;
     }
 
-    public static Map<String, Channel> createMeterChannels(Thing thing, final ShellySettingsMeter meter, String group) {
+    public static Map<String, Channel> createMeterChannels(Thing thing, final ShellyDeviceProfile profile,
+            final ShellySettingsMeter meter, String group) {
         Map<String, Channel> newChannels = new LinkedHashMap<>();
+        Double[] counters = meter.counters;
+        boolean hasCounter = counters != null && counters.length > 0 && counters[0] != null;
         addChannel(thing, newChannels, meter.power != null, group, CHANNEL_METER_CURRENTWATTS);
         addChannel(thing, newChannels, meter.total != null, group, CHANNEL_METER_TOTALKWH);
-        addChannel(thing, newChannels, meter.counters != null && meter.counters[0] != null, group,
-                CHANNEL_METER_LASTMIN1);
-        addChannel(thing, newChannels, meter.timestamp != null, group, CHANNEL_LAST_UPDATE);
+        // lastPower1 (W, deprecated) and energyAvg1Min (Wh) are always created together. Both channels
+        // receive updates so existing items linked to lastPower1 keep working without re-discovery.
+        addChannel(thing, newChannels, hasCounter, group, CHANNEL_METER_LASTMIN1);
+        addChannel(thing, newChannels, hasCounter, group, CHANNEL_METER_ENERGYAVG1MIN);
+        addChannel(thing, newChannels, !newChannels.isEmpty(), group, CHANNEL_LAST_UPDATE);
         return newChannels;
     }
 
     public static Map<String, Channel> createEMeterChannels(final Thing thing, final ShellyDeviceProfile profile,
             final ShellySettingsEMeter emeter, String group) {
         Map<String, Channel> newChannels = new LinkedHashMap<>();
-        addChannel(thing, newChannels, emeter.power != null, group, CHANNEL_METER_CURRENTWATTS);
-        addChannel(thing, newChannels, emeter.total != null, group, CHANNEL_METER_TOTALKWH);
-        addChannel(thing, newChannels, emeter.totalReturned != null, group, CHANNEL_EMETER_TOTALRET);
-        addChannel(thing, newChannels, emeter.reactive != null, group, CHANNEL_EMETER_REACTWATTS);
-        addChannel(thing, newChannels, emeter.voltage != null, group, CHANNEL_EMETER_VOLTAGE);
-        addChannel(thing, newChannels, emeter.current != null, group, CHANNEL_EMETER_CURRENT);
+        // Pure data-driven: create a channel if and only if the device populates the field.
+        // Channel creation always runs during the first HTTP poll (full Shelly.GetStatus response),
+        // so all fields the device supports are present. WS NotifyStatus pushes arrive after
+        // channelsCreated=true and never trigger this path.
+        // The totalKWH/totalEnergy and returnedKWH/returnedEnergy channel pairs (deprecated id plus
+        // replacement, created together) use profile flags as a safety net: emdata:0 (accumulated
+        // totals) arrives as a separate component from em:0 and may be absent on the first HTTP poll
+        // for some 3EM/EM50 firmware versions.
+        // 3EM always has 3 phases — create all channels unconditionally so phase C channels exist
+        // even when the phase is unloaded and the first poll returns null for that field.
+        // Pro EM-50 has a variable number of clamps, so remains data-driven.
+        boolean always = profile.is3EM;
+        addChannel(thing, newChannels, always || emeter.power != null, group, CHANNEL_METER_CURRENTWATTS);
+        addChannel(thing, newChannels, always || profile.isEM50 || emeter.total != null, group, CHANNEL_METER_TOTALKWH);
+        addChannel(thing, newChannels, always || profile.isEM50 || emeter.totalReturned != null, group,
+                CHANNEL_EMETER_TOTALRET);
+        // reactiveWatts (deprecated, type meterReactive/W as on the pre-5.2 binding) and reactivePower
+        // (type meterReactivePower/VAR) are always created together. The dual-write posts the same VAR
+        // state to both; on the old W-based channel it converts 1:1 (same numeric value as before).
+        boolean hasReactive = (always && !profile.isGen2) || emeter.reactive != null;
+        addChannel(thing, newChannels, hasReactive, group, CHANNEL_EMETER_REACTWATTS);
+        addChannel(thing, newChannels, hasReactive, group, CHANNEL_EMETER_REACTPOWER);
+        addChannel(thing, newChannels, always || emeter.voltage != null, group, CHANNEL_EMETER_VOLTAGE);
+        addChannel(thing, newChannels, always || emeter.current != null, group, CHANNEL_EMETER_CURRENT);
+        addChannel(thing, newChannels, (always && profile.isGen2) || emeter.apparentPower != null, group,
+                CHANNEL_EMETER_APPARENT);
         addChannel(thing, newChannels, emeter.frequency != null, group, CHANNEL_EMETER_FREQUENCY);
-        addChannel(thing, newChannels, emeter.pf != null, group, CHANNEL_EMETER_PFACTOR); // EM has no PF. but power
-        addChannel(thing, newChannels, true, group, CHANNEL_LAST_UPDATE);
-        ShellyThingInterface handler = (ShellyThingInterface) thing.getHandler();
-        if (handler != null) {
-            addChannel(thing, newChannels, handler.getProfile().isEM50, group, CHANNEL_DEVST_RESETTOTAL); // 3EM
-        }
+        addChannel(thing, newChannels, always || emeter.pf != null, group, CHANNEL_EMETER_PFACTOR);
+        // lastPower1 (W, deprecated) and energyAvg1Min (Wh) are always created together when the device
+        // reports last-minute energy. Non-PM Gen2 relays (e.g. Plus 1) omit aenergy entirely — both absent.
+        @Nullable
+        Double @Nullable [] byMinute = emeter.energyByMinute;
+        boolean hasLastMinute = byMinute != null && byMinute.length > 0 && byMinute[0] != null;
+        addChannel(thing, newChannels, hasLastMinute, group, CHANNEL_METER_LASTMIN1);
+        addChannel(thing, newChannels, hasLastMinute, group, CHANNEL_METER_ENERGYAVG1MIN);
+        // Only add lastUpdate if this device actually has meter channels — guards against non-PM Gen2 relay
+        // devices (e.g. Plus 1) where isEMeter=true but all emeter fields are permanently null.
+        addChannel(thing, newChannels, !newChannels.isEmpty(), group, CHANNEL_LAST_UPDATE);
         return newChannels;
     }
 
-    public static Map<String, Channel> createEMNCurrentChannels(final Thing thing, ShellyEMNCurrentSettings settings,
-            ShellyEMNCurrentStatus status) {
+    public static Map<String, Channel> createEMNCurrentChannels(final Thing thing,
+            @Nullable ShellyEMNCurrentSettings settings, ShellyEMNCurrentStatus status) {
         String group = CHANNEL_GROUP_NMETER;
         Map<String, Channel> newChannels = new LinkedHashMap<>();
         addChannel(thing, newChannels, status.current != null, group, CHANNEL_NMETER_CURRENT);
         addChannel(thing, newChannels, status.ixsum != null, group, CHANNEL_NMETER_IXSUM);
         addChannel(thing, newChannels, status.mismatch != null, group, CHANNEL_NMETER_MISMATCH);
-        addChannel(thing, newChannels, settings.mismatchThreshold != null, group, CHANNEL_NMETER_MTRESHHOLD);
+        // mismatchThreshold only available from Gen1 settings; absent on Gen2
+        addChannel(thing, newChannels, settings != null && settings.mismatchThreshold != null, group,
+                CHANNEL_NMETER_MTRESHHOLD);
         return newChannels;
     }
 
@@ -544,7 +646,8 @@ public class ShellyChannelDefinitions {
         addChannel(thing, newChannels, sdata.tmp != null || sdata.thermostats != null, CHANNEL_GROUP_SENSOR,
                 CHANNEL_SENSOR_TEMP);
         addChannel(thing, newChannels, sdata.hum != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_HUM);
-        addChannel(thing, newChannels, sdata.lux != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_LUX);
+        addChannel(thing, newChannels, sdata.lux != null && sdata.lux.value != null, CHANNEL_GROUP_SENSOR,
+                CHANNEL_SENSOR_LUX);
         addChannel(thing, newChannels, sdata.lux != null && sdata.lux.illumination != null, CHANNEL_GROUP_SENSOR,
                 CHANNEL_SENSOR_ILLUM);
         addChannel(thing, newChannels, sdata.flood != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_FLOOD);
@@ -563,9 +666,19 @@ public class ShellyChannelDefinitions {
             addChannel(thing, newChannels, sdata.sensor.vibration != null, CHANNEL_GROUP_SENSOR,
                     CHANNEL_SENSOR_VIBRATION);
         }
-        // Create tilt for DW/DW2, for BLU DW create channel even tilt is currently not reported
+
+        // Shelly DW/DW2/BLU DW
+        // Depending on timing the device only reports tilt or illuminance in the 1st packet only distance or vibration
+        // In this case create both channels, also if only one is included in the first packet
         if (sdata.accel != null || (profile.isBlu && profile.isDW && sdata.lux != null)) {
-            addChannel(thing, newChannels, sdata.accel.tilt != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_TILT);
+            addChannel(thing, newChannels, sdata.lux != null || sdata.accel.tilt != null, CHANNEL_GROUP_SENSOR,
+                    CHANNEL_SENSOR_TILT);
+        }
+
+        // Depending on timing Shelly BLU distance reports in the 1st packet only distance or vibration
+        // In this case create both channels, also if only one is included in the first packet
+        if (sdata.distance != null || profile.isDistance) {
+            addChannel(thing, newChannels, sdata.distance != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_DISTANCE);
         }
 
         // Gas
@@ -582,6 +695,16 @@ public class ShellyChannelDefinitions {
 
         // Sense
         addChannel(thing, newChannels, profile.isSense, CHANNEL_GROUP_SENSOR, CHANNEL_SENSE_KEY);
+
+        // BLU Remote
+        if (profile.isRemote) {
+            addChannel(thing, newChannels, true, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_CHANNEL);
+            addChannel(thing, newChannels, true, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ROTATIONX);
+            addChannel(thing, newChannels, true, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ROTATIONY);
+            addChannel(thing, newChannels, true, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ROTATIONZ);
+            addChannel(thing, newChannels, true, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_DIRECTION);
+            addChannel(thing, newChannels, true, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_STEPS);
+        }
 
         // UNI
         addChannel(thing, newChannels, sdata.adcs != null, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_VOLTAGE);
@@ -619,35 +742,82 @@ public class ShellyChannelDefinitions {
         throw new IllegalArgumentException("Invalid channelId:" + channelId);
     }
 
+    public static @Nullable String getReplacementChannelId(String channelId) {
+        int groupSeparator = channelId.indexOf(ChannelUID.CHANNEL_GROUP_SEPARATOR);
+        if (groupSeparator < 0) {
+            return null;
+        }
+        String channelName = channelId.substring(groupSeparator + 1);
+        String replacement = getReplacementChannelName(channelName);
+        return replacement != null ? channelId.substring(0, groupSeparator + 1) + replacement : null;
+    }
+
+    public static @Nullable String getReplacementChannelName(String channelName) {
+        return switch (channelName) {
+            case CHANNEL_METER_CURRENTWATTS -> CHANNEL_METER_CURRENTPOWER;
+            case CHANNEL_METER_TOTALKWH -> CHANNEL_METER_TOTALENERGY;
+            case CHANNEL_EMETER_TOTALRET -> CHANNEL_EMETER_RETURNEDENERGY;
+            case CHANNEL_DEVST_ACCUWATTS -> CHANNEL_DEVST_ACCUMULATEDPOWER;
+            case CHANNEL_EMETER_REACTWATTS -> CHANNEL_EMETER_REACTPOWER;
+            case CHANNEL_DEVST_ACCUTOTAL -> CHANNEL_DEVST_TOTALENERGY;
+            // CHANNEL_METER_LASTMIN1 (lastPower1, W) intentionally has NO entry: its replacement
+            // energyAvg1Min is Number:Energy (Wh); forwarding the W state via the dual-write would
+            // post an incompatible unit to Wh-based items on every poll ("could not be converted
+            // to the item unit" warnings). All write sites post both channels explicitly instead.
+            case CHANNEL_NMETER_MTRESHHOLD -> CHANNEL_NMETER_THRESHOLD;
+            case CHANNEL_DEVST_ACCURETURNED -> CHANNEL_DEVST_ACCURETURNEDENERGY;
+            default -> null;
+        };
+    }
+
+    public static @Nullable Channel createChannel(Thing thing, String channelId) throws IllegalArgumentException {
+        String group = substringBefore(channelId, ChannelUID.CHANNEL_GROUP_SEPARATOR);
+        String channelName = substringAfter(channelId, ChannelUID.CHANNEL_GROUP_SEPARATOR);
+        return createChannel(thing, channelId, group, channelName);
+    }
+
     private static void addChannel(Thing thing, Map<String, Channel> newChannels, boolean supported, String group,
             String channelName) throws IllegalArgumentException {
         if (supported) {
-            String channelId = group + "#" + channelName;
-            ChannelUID channelUID = new ChannelUID(thing.getUID(), channelId);
-            ShellyChannel channelDef = getDefinition(channelId);
-            if (channelDef != null) {
-                ChannelTypeUID channelTypeUID = channelDef.typeId.contains("system:")
-                        ? new ChannelTypeUID(channelDef.typeId)
-                        : new ChannelTypeUID(BINDING_ID, channelDef.typeId);
-                ChannelBuilder builder;
-                if ("system:button".equalsIgnoreCase(channelDef.typeId)) {
-                    builder = ChannelBuilder.create(channelUID, null).withKind(ChannelKind.TRIGGER);
-                } else {
-                    builder = ChannelBuilder.create(channelUID, channelDef.itemType);
+            String channelId = group + ChannelUID.CHANNEL_GROUP_SEPARATOR + channelName;
+            Channel channel = createChannel(thing, channelId, group, channelName);
+            if (channel != null) {
+                newChannels.put(channelId, channel);
+                String replacement = getReplacementChannelName(channelName);
+                if (replacement != null) {
+                    addChannel(thing, newChannels, true, group, replacement);
                 }
-                if (!channelDef.label.isEmpty()) {
-                    char grseq = lastChar(group);
-                    char chseq = lastChar(channelName);
-                    char sequence = isDigit(chseq) ? chseq : grseq;
-                    String label = !isDigit(sequence) ? channelDef.label : channelDef.label + " " + sequence;
-                    builder.withLabel(label);
-                }
-                if (!channelDef.description.isEmpty()) {
-                    builder.withDescription(channelDef.description);
-                }
-                newChannels.put(channelId, builder.withType(channelTypeUID).build());
             }
         }
+    }
+
+    private static @Nullable Channel createChannel(Thing thing, String channelId, String group, String channelName)
+            throws IllegalArgumentException {
+        ChannelUID channelUID = new ChannelUID(thing.getUID(), channelId);
+        ShellyChannel channelDef = getDefinition(channelId);
+        if (channelDef == null) {
+            return null;
+        }
+
+        ChannelTypeUID channelTypeUID = channelDef.typeId.contains("system:") ? new ChannelTypeUID(channelDef.typeId)
+                : new ChannelTypeUID(BINDING_ID, channelDef.typeId);
+        ChannelBuilder builder;
+        if ("system:button".equalsIgnoreCase(channelDef.typeId)) {
+            builder = ChannelBuilder.create(channelUID, null).withKind(ChannelKind.TRIGGER);
+        } else {
+            builder = ChannelBuilder.create(channelUID, channelDef.itemType);
+        }
+        if (!channelDef.label.isEmpty()) {
+            char grseq = lastChar(group);
+            char chseq = lastChar(channelName);
+            char sequence = isDigit(chseq) ? chseq : grseq;
+            String label = !isDigit(sequence) ? channelDef.label : channelDef.label + " " + sequence;
+            builder.withLabel(label);
+        }
+        if (!channelDef.description.isEmpty()) {
+            builder.withDescription(channelDef.description);
+        }
+        return builder.withType(channelTypeUID).build();
     }
 
     public List<StateOption> getStateOptions(ChannelTypeUID uid) {
@@ -674,24 +844,14 @@ public class ShellyChannelDefinitions {
         }
     }
 
-    public class ShellyChannel {
+    private class ShellyChannel {
         private final ShellyTranslationProvider messages;
-        public String group = "";
-        public String groupLabel = "";
-        public String groupDescription = "";
-
-        public String channel = "";
-        public String label = "";
-        public String description = "";
-        public String itemType = "";
-        public String typeId = "";
-        public String category = "";
-        public Set<String> tags = new HashSet<>();
-        public @Nullable Unit<?> unit;
-        public Optional<Integer> min = Optional.empty();
-        public Optional<Integer> max = Optional.empty();
-        public Optional<Integer> step = Optional.empty();
-        public Optional<String> pattern = Optional.empty();
+        private final String group;
+        private final String channel;
+        private final String label;
+        private final String description;
+        private final String itemType;
+        private final String typeId;
 
         public ShellyChannel(ShellyTranslationProvider messages, String group, String channel, String typeId,
                 String itemType, String... category) {
@@ -701,84 +861,15 @@ public class ShellyChannelDefinitions {
             this.itemType = itemType;
             this.typeId = typeId;
 
-            groupLabel = getText(PREFIX_GROUP + group + ".label");
-            if (groupLabel.startsWith(PREFIX_GROUP)) {
-                groupLabel = "";
-            }
-            groupDescription = getText(PREFIX_GROUP + group + ".description");
-            if (groupDescription.startsWith(PREFIX_GROUP)) {
-                groupDescription = "";
-            }
-            label = getText(PREFIX_CHANNEL + typeId.replace(':', '.') + ".label");
-            if (label.startsWith(PREFIX_CHANNEL)) {
-                label = "";
-            }
-            description = getText(PREFIX_CHANNEL + typeId + ".description");
-            if (description.startsWith(PREFIX_CHANNEL)) {
-                description = ""; // no resource found
-            }
+            String text = getText(PREFIX_CHANNEL + typeId.replace(':', '.') + ".label");
+            label = text.startsWith(PREFIX_CHANNEL) ? "" : text;
+
+            text = getText(PREFIX_CHANNEL + typeId + ".description");
+            description = text.startsWith(PREFIX_CHANNEL) ? "" : text;
         }
 
-        public String getChanneId() {
-            return group + "#" + channel;
-        }
-
-        public String getGroupLabel() {
-            return getGroupAttribute("group");
-        }
-
-        public String getGroupDescription() {
-            return getGroupAttribute("group");
-        }
-
-        public String getLabel() {
-            return getChannelAttribute("label");
-        }
-
-        public String getDescription() {
-            return getChannelAttribute("description");
-        }
-
-        public boolean getAdvanced() {
-            String attr = getChannelAttribute("advanced");
-            return attr.isEmpty() ? false : Boolean.valueOf(attr);
-        }
-
-        public boolean getReadyOnly() {
-            String attr = getChannelAttribute("readOnly");
-            return attr.isEmpty() ? false : Boolean.valueOf(attr);
-        }
-
-        public String getCategory() {
-            return getChannelAttribute("category");
-        }
-
-        public String getMin() {
-            return getChannelAttribute("min");
-        }
-
-        public String getMax() {
-            return getChannelAttribute("max");
-        }
-
-        public String getStep() {
-            return getChannelAttribute("step");
-        }
-
-        public String getPattern() {
-            return getChannelAttribute("pattern");
-        }
-
-        public String getGroupAttribute(String attribute) {
-            String key = PREFIX_GROUP + group + "." + attribute;
-            String value = messages.getText(key);
-            return !value.equals(key) ? value : "";
-        }
-
-        public String getChannelAttribute(String attribute) {
-            String key = PREFIX_CHANNEL + channel + "." + attribute;
-            String value = messages.getText(key);
-            return !value.equals(key) ? value : "";
+        public String getChannelId() {
+            return group + ChannelUID.CHANNEL_GROUP_SEPARATOR + channel;
         }
 
         private String getText(String key) {
@@ -790,20 +881,20 @@ public class ShellyChannelDefinitions {
         private final Map<String, ShellyChannel> map = new HashMap<>();
 
         private ChannelMap add(ShellyChannel def) {
-            map.put(def.getChanneId(), def);
+            map.put(def.getChannelId(), def);
             return this;
         }
 
         public ShellyChannel get(String channelName) throws IllegalArgumentException {
             ShellyChannel def = null;
-            if (channelName.contains("#")) {
+            if (channelName.contains(ChannelUID.CHANNEL_GROUP_SEPARATOR)) {
                 def = map.get(channelName);
                 if (def != null) {
                     return def;
                 }
             }
             for (HashMap.Entry<String, ShellyChannel> entry : map.entrySet()) {
-                if (entry.getValue().channel.contains("#" + channelName)) {
+                if (entry.getValue().channel.contains(ChannelUID.CHANNEL_GROUP_SEPARATOR + channelName)) {
                     def = entry.getValue();
                     break;
                 }

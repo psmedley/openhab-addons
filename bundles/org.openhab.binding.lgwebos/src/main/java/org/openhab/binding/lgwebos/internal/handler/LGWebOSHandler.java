@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -253,6 +253,11 @@ public class LGWebOSHandler extends BaseThingHandler
     }
 
     @Override
+    public String getBroadcastAddress() {
+        return getLGWebOSConfig().getBroadcastAddress();
+    }
+
+    @Override
     public void storeKey(@Nullable String key) {
         if (!getKey().equals(key)) {
             logger.debug("Store new access Key in the thing configuration");
@@ -299,7 +304,7 @@ public class LGWebOSHandler extends BaseThingHandler
                 break;
             case REGISTERED:
                 startKeepAliveJob();
-                updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE, "@text/online.connected");
+                updateStatus(ThingStatus.ONLINE);
 
                 channelHandlers.forEach((k, v) -> {
                     // refresh subscriptions except on channel, which can only be subscribe in livetv app. see

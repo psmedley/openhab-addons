@@ -36,20 +36,21 @@ to be installed on the device.
 
 The is one required field to connect to the devices.  All other fields are optional.
 
-| Name             | Type    | Description                           | Default | Required | Advanced |
-|------------------|---------|---------------------------------------|---------|----------|----------|
-| ipAddress        | text    | IP address of the device              | N/A     | yes      | no       |
-| googletvPort     | text    | TCP Port for GoogleTV                 | 6466    | no       | yes      |
-| shieldtvPort     | text    | TCP Port for ShieldTV                 | 8987    | no       | yes      |
-| philipstvPort    | text    | TCP Port for PhilipsTV                | 1926    | no       | yes      |
-| keystoreFileName | text    | Location of the Java Keystore         | N/A     | no       | yes      |
-| keystorePassword | text    | Password of the Java Keystore         | N/A     | no       | yes      |
-| reconnect        | text    | Delay between reconnections           | 60      | no       | yes      |
-| heartbeat        | text    | Frequency of heartbeats               | 5       | no       | yes      |
-| delay            | text    | Delay between messages                | 0       | no       | yes      |
-| refreshRate      | text    | Refresh interval of PhilipsTV         | 10      | no       | yes      |
-| useUpnpDiscovery | boolean | Enables UPnP Discovery for PhilipsTV  | true    | no       | yes      |
-| gtvEnabled       | boolean | Enable/Disable the GoogleTV protocol  | true    | no       | yes      |
+| Name             | Type    | Description                                       | Default | Required | Advanced |
+|------------------|---------|---------------------------------------------------|---------|----------|----------|
+| ipAddress        | text    | IP address of the device                          | N/A     | yes      | no       |
+| googletvPort     | text    | TCP Port for GoogleTV                             | 6466    | no       | yes      |
+| shieldtvPort     | text    | TCP Port for ShieldTV                             | 8987    | no       | yes      |
+| philipstvPort    | text    | TCP Port for PhilipsTV                            | 1926    | no       | yes      |
+| keystoreFileName | text    | Location of the Java Keystore                     | N/A     | no       | yes      |
+| keystorePassword | text    | Password of the Java Keystore                     | N/A     | no       | yes      |
+| reconnect        | text    | Delay between reconnections                       | 60      | no       | yes      |
+| heartbeat        | text    | Frequency of heartbeats                           | 5       | no       | yes      |
+| delay            | text    | Delay between messages                            | 0       | no       | yes      |
+| refreshRate      | text    | Refresh interval of PhilipsTV                     | 10      | no       | yes      |
+| useUpnpDiscovery | boolean | Enables UPnP Discovery for PhilipsTV              | true    | no       | yes      |
+| gtvEnabled       | boolean | Enable/Disable the GoogleTV protocol              | true    | no       | yes      |
+| skipPowerRefresh | boolean | Skip additional power state refresh for PhilipsTV | false   | no       | yes      |
 
 ```java
 Thing androidtv:shieldtv:livingroom [ ipAddress="192.168.1.2" ]
@@ -163,7 +164,7 @@ KEYPRESS will accept the following commands as strings (case sensitive):
 - KEY_SUBMIT
 
 The list above causes an instantanious "press and release" of each button.
-If you would like to manually control the press and release of each you may append _PRESS and _RELEASE to the end of each.
+If you would like to manually control the press and release of each you may append `_PRESS` and `_RELEASE` to the end of each.
 (e.g. KEY_FORWARD_PRESS or KEY_FORWARD_RELEASE)
 
 You may also send an ASCII character as a single letter to simulate a key entry (e.g KEY_A, KEY_1, KEY_z).
@@ -225,6 +226,7 @@ This completes the PIN process.
 Upon reconnection (either from reconfiguration or a restart of OpenHAB), you should now see a message of "Login Successful" in openhab.log
 
 ## Troubleshooting
+
 Some devices come with an outdated version of the "Android TV Remote Service". So in case the PIN Process does not result in a PIN
 shown on the screen, and the openHAB log shows an entry
 ```GoogleTV version on device needs to be updated```
@@ -598,4 +600,3 @@ Switch GoogleTV_MUTE "MUTE [%s]" { channel = "androidtv:googletv:theater:mute" }
 | 302 | KEYCODE_DEMO_APP_2 |
 | 303 | KEYCODE_DEMO_APP_3 |
 | 304 | KEYCODE_DEMO_APP_4 |
-

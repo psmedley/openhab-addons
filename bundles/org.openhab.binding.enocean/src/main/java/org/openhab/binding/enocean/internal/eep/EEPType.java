@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -425,6 +425,8 @@ public enum EEPType {
 
                 {
                     put(CHANNEL_ROLLERSHUTTER, new Configuration());
+                    put(CHANNEL_DIMMER, new Configuration());
+                    put(CHANNEL_STATEMACHINESTATE, new Configuration());
                     put(CHANNEL_TEACHINCMD, new Configuration() {
                         {
                             put(PARAMETER_CHANNEL_TEACHINMSG, "fff80d80");
@@ -480,7 +482,7 @@ public enum EEPType {
     SwitchWithEnergyMeasurment_0B(RORG.VLD, 0x01, 0x0B, true, D2_01_0B.class, THING_TYPE_MEASUREMENTSWITCH,
             CHANNEL_GENERAL_SWITCHING, CHANNEL_TOTALUSAGE, CHANNEL_INSTANTPOWER),
     SwitchWithEnergyMeasurment_0C(RORG.VLD, 0x01, 0x0C, true, D2_01_0C.class, THING_TYPE_MEASUREMENTSWITCH,
-            CHANNEL_GENERAL_SWITCHING, CHANNEL_TOTALUSAGE, CHANNEL_INSTANTPOWER),
+            CHANNEL_GENERAL_SWITCHING, CHANNEL_PILOT_WIRE, CHANNEL_TOTALUSAGE, CHANNEL_INSTANTPOWER),
     SwitchWithEnergyMeasurment_0D(RORG.VLD, 0x01, 0x0D, true, D2_01_0D.class, THING_TYPE_MEASUREMENTSWITCH,
             CHANNEL_GENERAL_SWITCHING),
     SwitchWithEnergyMeasurment_0E(RORG.VLD, 0x01, 0x0E, true, D2_01_0E.class, THING_TYPE_MEASUREMENTSWITCH,
@@ -730,7 +732,11 @@ public enum EEPType {
 
     public boolean isChannelSupported(String channelId, String channelTypeId) {
         return supportedChannels.containsKey(channelId) || VIRTUALCHANNEL_SEND_COMMAND.equals(channelId)
-                || supportedChannels.values().stream().anyMatch(c -> c.channelTypeUID.getId().equals(channelTypeId));
+                || supportedChannels.values().stream().anyMatch(c -> {
+                    String supportedChannelTypeId = c.channelTypeUID.getId();
+                    return supportedChannelTypeId.equals(channelTypeId)
+                            || supportedChannelTypeId.endsWith(":" + channelTypeId);
+                });
     }
 
     public @Nullable ThingTypeUID getThingTypeUID() {
