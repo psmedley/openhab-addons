@@ -12,17 +12,20 @@
  */
 package org.openhab.binding.teslapowerwallcloud.internal;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.http.HttpHeader;
 import org.openhab.binding.teslapowerwallcloud.internal.api.LiveStatus;
 import org.openhab.binding.teslapowerwallcloud.internal.api.SiteInfo;
 import org.openhab.binding.teslapowerwallcloud.internal.api.TokenResponse;
-import org.openhab.core.io.net.http.HttpUtil;
 import org.openhab.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,72 +35,67 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-/**
- * Handles performing the actual HTTP requests for communicating with the Tesla API.
- *
- * @author Paul Smedley - Initial Contribution
- *
- */
-
 @NonNullByDefault
 public class TeslaPowerwallCloudWebTargets {
-    private static final int TIMEOUT_MS = 30000;
 
+    private static final int TIMEOUT_MS = 30000;
     private final Logger logger = LoggerFactory.getLogger(TeslaPowerwallCloudWebTargets.class);
     private static final String BASE_URI = "https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/energy_sites/";
-
     private final Gson gson = new Gson();
 
-    public TeslaPowerwallCloudWebTargets() {
+    private final HttpClient httpClient;
+
+    public TeslaPowerwallCloudWebTargets(HttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
     public String getSiteID(String accessToken) throws TeslaPowerwallCloudCommunicationException {
         String response = invoke("GET", "https://fleet-api.prd.na.vn.cloud.tesla.com/api/1/products", accessToken);
         logger.debug("Product List response = {}", response);
+
         JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
         JsonArray jsonResponse = jsonObject.getAsJsonArray("response");
         String siteID = "";
-        int i = 0;
-        while (siteID.isEmpty()) {
-            jsonObject = jsonResponse.get(i).getAsJsonObject();
-            if (jsonObject.has("energy_site_id")) {
-                siteID = jsonObject.get("energy_site_id").getAsString();
+
+        for (int i = 0; i < jsonResponse.size(); i++) {
+            JsonObject productObj = jsonResponse.get(i).getAsJsonObject();
+            if (productObj.has("energy_site_id")) {
+                siteID = productObj.get("energy_site_id").getAsString();
+                break;
             }
-            i++;
         }
+
         logger.debug("Selected siteID is = {}", siteID);
         return siteID;
     }
 
     @Nullable
     public TokenResponse generateAccessToken(String refreshToken, String client_id) {
-        String response;
-        String payload = "{\"grant_type\":\"refresh_token\",\"client_id\":\"" + client_id + "\",\"refresh_token\":\""
-                + refreshToken + "\"}";
-        Properties httpHeaders = new Properties();
-        httpHeaders.put("Content-Type", "application/json");
+        JsonObject jsonPayload = new JsonObject();
+        jsonPayload.addProperty("grant_type", "refresh_token");
+        jsonPayload.addProperty("client_id", client_id);
+        jsonPayload.addProperty("refresh_token", refreshToken);
+        String payload = gson.toJson(jsonPayload);
+
         logger.debug("payload = {}", payload);
-        ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
+
         try {
-            response = HttpUtil.executeUrl("POST", "https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token",
-                    httpHeaders, input, "application/text", TIMEOUT_MS);
-        } catch (IOException ex) {
-            logger.debug("Exception during generateAccessToken{}", ex.getLocalizedMessage(), ex);
-            // Response will also be set to null if parsing in executeUrl fails so we use null here to make the
-            // error check below consistent.
-            response = null;
+            // Note: Tesla auth endpoint does not require the Bearer token, passing empty string
+            String response = invoke("POST", "https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token", "", payload,
+                    "application/json");
+            logger.trace("response = {}", response);
+            return gson.fromJson(response, TokenResponse.class);
+        } catch (TeslaPowerwallCloudCommunicationException ex) {
+            logger.debug("Exception during generateAccessToken: {}", ex.getLocalizedMessage(), ex);
+            return null;
         }
-        logger.trace("response = {}", response);
-        TokenResponse tokenResponse = gson.fromJson(response, TokenResponse.class);
-        return (tokenResponse != null) ? tokenResponse : null;
     }
 
     @Nullable
     public SiteInfo getSiteInfo(String accessToken, String siteID) throws TeslaPowerwallCloudCommunicationException {
         String response = invoke("GET", BASE_URI + siteID + "/site_info", accessToken);
-        SiteInfo siteInfo = gson.fromJson(response, SiteInfo.class);
         logger.trace("getSiteInfo response = {}", response);
-        return (siteInfo != null) ? siteInfo : null;
+        return gson.fromJson(response, SiteInfo.class);
     }
 
     @Nullable
@@ -105,49 +103,43 @@ public class TeslaPowerwallCloudWebTargets {
             throws TeslaPowerwallCloudCommunicationException {
         String response = invoke("GET", BASE_URI + siteID + "/live_status", accessToken);
         logger.trace("getLiveStatus response = {}", response);
-        @Nullable
-        LiveStatus liveStatus = gson.fromJson(response, LiveStatus.class);
-        return (liveStatus != null) ? liveStatus : null;
+        return gson.fromJson(response, LiveStatus.class);
     }
 
     public String setOperatingMode(String accessToken, String siteID, Command newMode)
             throws TeslaPowerwallCloudCommunicationException {
-        String payload = "{\"default_real_mode\":\"" + newMode + "\"}";
+        JsonObject jsonPayload = new JsonObject();
+        jsonPayload.addProperty("default_real_mode", newMode.toString());
+        String payload = gson.toJson(jsonPayload);
 
         logger.debug("payload = {}", payload);
-        ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
-        String response = invoke("POST", BASE_URI + siteID + "/operation", accessToken, input, "application/json");
+        String response = invoke("POST", BASE_URI + siteID + "/operation", accessToken, payload, "application/json");
         logger.trace("response to Operating Mode change = {}", response);
         return response;
     }
 
     public String setReserve(String accessToken, String siteID, Command newReserve)
             throws TeslaPowerwallCloudCommunicationException {
-        String payload = "{\"backup_reserve_percent\":" + newReserve + "}";
+        JsonObject jsonPayload = new JsonObject();
+        jsonPayload.addProperty("backup_reserve_percent", Float.parseFloat(newReserve.toString()));
+        String payload = gson.toJson(jsonPayload);
 
         logger.debug("payload = {}", payload);
-        ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
-        String response = invoke("POST", BASE_URI + siteID + "/backup", accessToken, input, "application/json");
+        String response = invoke("POST", BASE_URI + siteID + "/backup", accessToken, payload, "application/json");
         logger.trace("response to reserve change = {}", response);
         return response;
     }
 
     public String setStormMode(String accessToken, String siteID, String newStormMode)
             throws TeslaPowerwallCloudCommunicationException {
-        String payload = "{\"enabled\":" + newStormMode + "}";
+        JsonObject jsonPayload = new JsonObject();
+        jsonPayload.addProperty("enabled", Boolean.parseBoolean(newStormMode));
+        String payload = gson.toJson(jsonPayload);
 
         logger.debug("payload = {}", payload);
-        ByteArrayInputStream input = new ByteArrayInputStream(payload.getBytes());
-        String response = invoke("POST", BASE_URI + siteID + "/storm_mode", accessToken, input, "application/json");
+        String response = invoke("POST", BASE_URI + siteID + "/storm_mode", accessToken, payload, "application/json");
         logger.trace("response to Storm Mode change = {}", response);
         return response;
-    }
-
-    protected Properties getHttpHeaders(String accessToken) {
-        Properties httpHeaders = new Properties();
-        httpHeaders.put("Authorization", "Bearer " + accessToken);
-        httpHeaders.put("Content-Type", "application/json");
-        return httpHeaders;
     }
 
     private String invoke(String httpMethod, String uri, String accessToken)
@@ -155,26 +147,43 @@ public class TeslaPowerwallCloudWebTargets {
         return invoke(httpMethod, uri, accessToken, null, null);
     }
 
-    private String invoke(String httpMethod, String uri, String accessToken, @Nullable InputStream content,
+    private String invoke(String httpMethod, String uri, String accessToken, @Nullable String payload,
             @Nullable String contentType) throws TeslaPowerwallCloudCommunicationException {
         logger.debug("Calling url: {}", uri);
-        String response;
-        synchronized (this) {
-            try {
-                response = HttpUtil.executeUrl(httpMethod, uri, getHttpHeaders(accessToken), content, contentType,
-                        TIMEOUT_MS);
-            } catch (IOException ex) {
-                logger.debug("{}", ex.getLocalizedMessage(), ex);
-                // Response will also be set to null if parsing in executeUrl fails so we use null here to make the
-                // error check below consistent.
-                response = null;
-            }
-        }
 
-        if (response.isEmpty()) {
-            throw new TeslaPowerwallCloudCommunicationException(
-                    String.format("TeslaPowerwallCloudcontroller returned no response while invoking %s", uri));
+        try {
+            Request request = httpClient.newRequest(uri).method(httpMethod).timeout(TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+            // Only add Auth header if it's provided (helps when generating the access token)
+            if (!accessToken.isEmpty()) {
+                request.header(HttpHeader.AUTHORIZATION, "Bearer " + accessToken);
+            }
+
+            // Use StringContentProvider and .content() for the payload
+            if (payload != null && contentType != null) {
+                request.content(new StringContentProvider(payload));
+                request.header(HttpHeader.CONTENT_TYPE, contentType);
+            } else {
+                request.header(HttpHeader.CONTENT_TYPE, "application/json");
+            }
+
+            ContentResponse response = request.send();
+
+            if (response.getStatus() >= 200 && response.getStatus() < 300) {
+                String contentAsString = response.getContentAsString();
+                if (contentAsString == null || contentAsString.isEmpty()) {
+                    throw new TeslaPowerwallCloudCommunicationException(
+                            "Received empty successful response from " + uri);
+                }
+                return contentAsString;
+            } else {
+                throw new TeslaPowerwallCloudCommunicationException(String.format("HTTP Error %d: %s when invoking %s",
+                        response.getStatus(), response.getContentAsString(), uri));
+            }
+
+        } catch (InterruptedException | TimeoutException | ExecutionException ex) {
+            logger.debug("{}", ex.getLocalizedMessage(), ex);
+            throw new TeslaPowerwallCloudCommunicationException("Communication error: " + ex.getMessage(), ex);
         }
-        return response;
     }
 }

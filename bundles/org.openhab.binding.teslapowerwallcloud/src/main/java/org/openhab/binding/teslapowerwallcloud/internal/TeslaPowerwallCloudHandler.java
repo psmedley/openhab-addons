@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.teslapowerwallcloud.internal.api.LiveStatus;
 import org.openhab.binding.teslapowerwallcloud.internal.api.SiteInfo;
 import org.openhab.binding.teslapowerwallcloud.internal.api.TokenResponse;
@@ -64,44 +65,38 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
     private @NonNullByDefault({}) TeslaPowerwallCloudWebTargets webTargets;
     private @Nullable ScheduledFuture<?> pollFuture;
 
-    public TeslaPowerwallCloudHandler(Thing thing) {
+    private final HttpClient httpClient;
+
+    public TeslaPowerwallCloudHandler(Thing thing, HttpClient httpClient) {
         super(thing);
+        this.httpClient = httpClient;
     }
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         try {
-            if (CHANNEL_POWERWALLCLOUD_POWERWALL_MODE.equals(channelUID.getId())) {
-                logger.debug("Setting operating mode to: {}", command);
-                webTargets.setOperatingMode(accessToken, siteID, command);
+            switch (channelUID.getId()) {
+                case CHANNEL_POWERWALLCLOUD_POWERWALL_MODE:
+                    logger.debug("Setting operating mode to: {}", command);
+                    webTargets.setOperatingMode(accessToken, siteID, command);
+                    break;
 
-                // Note: if communication with thing fails for some reason,
-                // indicate that by setting the status with detail information:
-                // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                // "Could not control device at IP address x.x.x.x");
-            }
-            if (CHANNEL_POWERWALLCLOUD_BATTERY_RESERVE.equals(channelUID.getId())) {
-                logger.debug("Setting reserve to: {}", command);
-                webTargets.setReserve(accessToken, siteID, command);
+                case CHANNEL_POWERWALLCLOUD_BATTERY_RESERVE:
+                    logger.debug("Setting reserve to: {}", command);
+                    webTargets.setReserve(accessToken, siteID, command);
+                    break;
 
-                // Note: if communication with thing fails for some reason,
-                // indicate that by setting the status with detail information:
-                // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                // "Could not control device at IP address x.x.x.x");
-            }
-            if (CHANNEL_POWERWALLCLOUD_STORM_MODE.equals(channelUID.getId())) {
-                if (command instanceof OnOffType) {
-                    logger.debug("Setting storm mode to: {}", command);
-                    if (command == OnOffType.ON) {
-                        webTargets.setStormMode(accessToken, siteID, "true");
-                    } else {
-                        webTargets.setStormMode(accessToken, siteID, "false");
+                case CHANNEL_POWERWALLCLOUD_STORM_MODE:
+                    if (command instanceof OnOffType) {
+                        logger.debug("Setting storm mode to: {}", command);
+                        String stormModeStr = (command == OnOffType.ON) ? "true" : "false";
+                        webTargets.setStormMode(accessToken, siteID, stormModeStr);
                     }
-                }
-                // Note: if communication with thing fails for some reason,
-                // indicate that by setting the status with detail information:
-                // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                // "Could not control device at IP address x.x.x.x");
+                    break;
+
+                default:
+                    logger.debug("Command received for unsupported channel: {}", channelUID.getId());
+                    break;
             }
         } catch (TeslaPowerwallCloudCommunicationException ex) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, ex.getMessage());
@@ -112,10 +107,12 @@ public class TeslaPowerwallCloudHandler extends BaseThingHandler {
     public void initialize() {
         TeslaPowerwallCloudConfiguration config = getConfigAs(TeslaPowerwallCloudConfiguration.class);
         logger.debug("config.siteID = {}, refresh = {}", config.siteID, config.refreshInterval);
-        if (config.refreshToken == null) {
+
+        if (config.refreshToken == null || config.refreshToken.isEmpty()) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "SSO Refresh Token must be set");
         } else {
-            webTargets = new TeslaPowerwallCloudWebTargets();
+            // Pass the HTTP client to the target handler
+            webTargets = new TeslaPowerwallCloudWebTargets(httpClient);
             refreshInterval = config.refreshInterval;
             siteID = config.siteID;
             clientID = config.clientID;

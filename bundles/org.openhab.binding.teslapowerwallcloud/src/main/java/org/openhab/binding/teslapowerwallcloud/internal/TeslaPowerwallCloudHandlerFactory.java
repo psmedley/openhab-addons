@@ -18,24 +18,30 @@ import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.client.HttpClient;
+import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandlerFactory;
 import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.thing.binding.ThingHandlerFactory;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
-/**
- * The {@link TeslaPowerwallCloudHandlerFactory} is responsible for creating things and thing
- * handlers.
- *
- * @author Paul Smedley - Initial contribution
- */
 @NonNullByDefault
 @Component(configurationPid = "binding.teslapowerwallcloud", service = ThingHandlerFactory.class)
 public class TeslaPowerwallCloudHandlerFactory extends BaseThingHandlerFactory {
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(POWERWALL_THING);
+
+    private final HttpClient httpClient;
+
+    @Activate
+    public TeslaPowerwallCloudHandlerFactory(@Reference HttpClientFactory httpClientFactory) {
+        // Retrieve the shared common Jetty HttpClient
+        this.httpClient = httpClientFactory.getCommonHttpClient();
+    }
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
@@ -45,11 +51,10 @@ public class TeslaPowerwallCloudHandlerFactory extends BaseThingHandlerFactory {
     @Override
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
-
         if (POWERWALL_THING.equals(thingTypeUID)) {
-            return new TeslaPowerwallCloudHandler(thing);
+            // Pass the httpClient to the handler
+            return new TeslaPowerwallCloudHandler(thing, httpClient);
         }
-
         return null;
     }
 }
