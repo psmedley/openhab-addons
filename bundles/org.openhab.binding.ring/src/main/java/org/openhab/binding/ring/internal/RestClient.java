@@ -121,22 +121,24 @@ public class RestClient {
      * @return the servers response
      * @throws AuthenticationException in case of an error
      */
-    private String postRequest(String endpoint, String content, Map<String, String> additionalHeaders,
-            @Nullable Tokens tokens) throws AuthenticationException {
+    /**
+     * Post data to given url with a custom content type.
+     */
+    private String postRequest(String endpoint, String content, String contentType,
+            Map<String, String> additionalHeaders, @Nullable Tokens tokens) throws AuthenticationException {
         String result = "";
         try {
             Request request = httpClient.newRequest(endpoint);
             request.method(HttpMethod.POST);
-            request.content(new StringContentProvider(content, StandardCharsets.UTF_8));
+            // Passing contentType directly ensures Jetty overrides the provider's default text/plain type
+            request.content(new StringContentProvider(content, StandardCharsets.UTF_8), contentType);
             request.timeout(CONNECTION_TIMEOUT, TimeUnit.MILLISECONDS);
             request.agent(ApiConstants.API_USER_AGENT);
             request.header("X-API-LANG", "en");
-            request.header(HttpHeader.CONTENT_TYPE.asString(), "application/x-www-form-urlencoded");
             if (tokens != null) {
                 request.header(HttpHeader.AUTHORIZATION.asString(), "Bearer " + tokens.accessToken());
             }
             additionalHeaders.forEach(request::header);
-
             ContentResponse response = request.send();
             validateResponse(response);
             result = response.getContentAsString();
@@ -152,6 +154,11 @@ public class RestClient {
             throw new AuthenticationException("POST request was interrupted.");
         }
         return result;
+    }
+
+    private String postRequest(String endpoint, String content, Map<String, String> additionalHeaders,
+            @Nullable Tokens tokens) throws AuthenticationException {
+        return postRequest(endpoint, content, "application/x-www-form-urlencoded", additionalHeaders, tokens);
     }
 
     private String getRequest(String endpoint, Map<String, String> additionalHeaders, Tokens tokens)
@@ -251,13 +258,18 @@ public class RestClient {
      * @throws AuthenticationException when request is invalid.
      */
     public long getSnapshotTimestamp(String deviceId, Tokens tokens) throws AuthenticationException {
-        String input = "{\"doorbot_ids\":[" + deviceId + "]}";
-        String jsonResult = postRequest(ApiConstants.URL_SNAPSHOT_TIMESTAMPS, input, Map.of(), tokens);
-        SessionTimestampTO sessionTimestamp = Objects
-                .requireNonNull(gson.fromJson(jsonResult, SessionTimestampTO.class));
-        if (sessionTimestamp.data.length > 0) {
-            return sessionTimestamp.data[0].timestamp;
-        } else {
+        try {
+            String input = "{\"doorbot_ids\":[" + deviceId + "]}";
+            String jsonResult = postRequest(ApiConstants.URL_SNAPSHOT_TIMESTAMPS, input, "application/json", Map.of(),
+                    tokens);
+            SessionTimestampTO sessionTimestamp = gson.fromJson(jsonResult, SessionTimestampTO.class);
+            if (sessionTimestamp != null && sessionTimestamp.data != null && sessionTimestamp.data.length > 0) {
+                return sessionTimestamp.data[0].timestamp;
+            } else {
+                return -1;
+            }
+        } catch (JsonParseException e) {
+            logger.warn("Failed to parse snapshot timestamps JSON: {}", e.getMessage());
             return -1;
         }
     }

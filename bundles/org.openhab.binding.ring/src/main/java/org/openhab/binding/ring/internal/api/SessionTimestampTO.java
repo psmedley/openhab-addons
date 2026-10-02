@@ -10,6 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
+
 package org.openhab.binding.ring.internal.api;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -19,14 +20,14 @@ import com.google.gson.annotations.SerializedName;
 /**
  * @author Paul Smedley - Initial contribution
  */
-
 @NonNullByDefault
 public class SessionTimestampTO {
+
     @SerializedName("timestamps")
-    public @NonNullByDefault({}) Data[] data;
+    public @NonNullByDefault({}) Data[] data = new Data[0];
 
     public static class Data {
-        public int doorbot_id;
+        public long doorbot_id;
         public long timestamp;
     }
 }

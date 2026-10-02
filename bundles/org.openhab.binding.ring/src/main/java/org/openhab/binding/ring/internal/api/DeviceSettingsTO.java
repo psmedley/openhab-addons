@@ -13,6 +13,7 @@
 package org.openhab.binding.ring.internal.api;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -22,9 +23,19 @@ import com.google.gson.annotations.SerializedName;
  * @author Paul Smedley - Initial contribution
  */
 @NonNullByDefault
-@SuppressWarnings("unused")
 public class DeviceSettingsTO {
 
     @SerializedName("motion_detection_enabled")
     public boolean motionDetectionEnabled;
+
+    @SerializedName("lite_24x7")
+    public @Nullable Lite24x7TO lite24x7;
+
+    public static class Lite24x7TO {
+        @SerializedName("enabled")
+        public boolean enabled = false;
+
+        @SerializedName("frequency")
+        public int frequency = 0;
+    }
 }

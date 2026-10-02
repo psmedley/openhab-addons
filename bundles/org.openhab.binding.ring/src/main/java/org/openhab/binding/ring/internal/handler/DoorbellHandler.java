@@ -10,6 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
+
 package org.openhab.binding.ring.internal.handler;
 
 import static org.openhab.binding.ring.RingBindingConstants.*;
@@ -44,15 +45,14 @@ import org.openhab.core.types.RefreshType;
  *
  * @author Wim Vissers - Initial contribution
  * @author Ben Rosenblum - Updated for OH4 / New Maintainer
- *
  */
-
 @NonNullByDefault
 public class DoorbellHandler extends RingDeviceHandler {
+
     private int lastBattery = -1;
     private long lastSnapshotTimestamp = -1;
     private long lastSnapshotCheckTime = 0;
-    private static final long SNAPSHOT_POLL_INTERVAL_MS = 10 * 60 * 1000;
+    private static final long DEFAULT_SNAPSHOT_POLL_INTERVAL_MS = 10 * 60 * 1000;
     private TimeZoneProvider timeZoneProvider;
     private boolean motionDetectionSupport = false;
 
@@ -145,6 +145,7 @@ public class DoorbellHandler extends RingDeviceHandler {
             logger.debug("Device data is not yet available for {}. Skipping tick.", getThing().getUID().getId());
             return;
         }
+
         RingDeviceTO deviceTO = device.getDeviceStatus();
         if (deviceTO.health.batteryPercentage != lastBattery) {
             logger.debug("Battery Level: {}", deviceTO.health.batteryPercentage);
@@ -155,31 +156,64 @@ public class DoorbellHandler extends RingDeviceHandler {
             logger.debug("Battery Level Unchanged for {} - {} vs {}", getThing().getUID().getId(),
                     deviceTO.health.batteryPercentage, lastBattery);
         }
+
         if (motionDetectionSupport) {
             ChannelUID channelUID = new ChannelUID(thing.getUID(), CHANNEL_CONTROL_MOTION_DETECTION);
             updateState(channelUID, OnOffType.from(deviceTO.deviceSettings.motionDetectionEnabled));
         }
-        // Throttle background snapshot polling to once every 10 minutes
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastSnapshotCheckTime >= SNAPSHOT_POLL_INTERVAL_MS) {
-            lastSnapshotCheckTime = currentTime;
 
-            long timestamp = getSnapshotTimestamp();
-            if (timestamp > lastSnapshotTimestamp) {
-                logger.debug(
-                        "Background snapshot detected! timestamp = {} != lastSnapshotTimestamp {}, updating channel",
-                        timestamp, lastSnapshotTimestamp);
-                lastSnapshotTimestamp = timestamp;
+        // Determine dynamic polling interval from Ring app settings
+        long pollIntervalMs = getSnapshotPollIntervalMs(deviceTO);
 
-                ChannelUID channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT);
-                updateState(channelUID, new RawType(getSnapshot(), "image/jpeg"));
+        if (pollIntervalMs == -1) {
+            logger.trace("Snapshot capture is disabled in Ring app settings for device {}. Skipping check.",
+                    getThing().getUID().getId());
+        } else {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastSnapshotCheckTime >= pollIntervalMs) {
+                lastSnapshotCheckTime = currentTime;
 
-                channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT_TIMESTAMP);
-                updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(timestamp)));
-            } else {
-                logger.debug("No new background snapshot found during 10-minute check.");
+                long timestamp = getSnapshotTimestamp();
+                if (timestamp > 0) {
+                    if (timestamp > lastSnapshotTimestamp) {
+                        logger.debug(
+                                "Background snapshot detected! timestamp = {} != lastSnapshotTimestamp {}, updating channel",
+                                timestamp, lastSnapshotTimestamp);
+                        byte[] snapshot = getSnapshot();
+                        if (snapshot.length > 0) {
+                            lastSnapshotTimestamp = timestamp;
+                            ChannelUID channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT);
+                            updateState(channelUID, new RawType(snapshot, "image/jpeg"));
+
+                            channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT_TIMESTAMP);
+                            updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(timestamp)));
+                        }
+                    }
+                } else {
+                    // Fallback if the timestamps API returned -1
+                    byte[] snapshot = getSnapshot();
+                    if (snapshot.length > 0) {
+                        ChannelUID channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT);
+                        updateState(channelUID, new RawType(snapshot, "image/jpeg"));
+
+                        channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT_TIMESTAMP);
+                        updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(currentTime)));
+                    }
+                }
             }
         }
+    }
+
+    private long getSnapshotPollIntervalMs(RingDeviceTO deviceTO) {
+        if (deviceTO.deviceSettings.lite24x7 != null) {
+            if (!deviceTO.deviceSettings.lite24x7.enabled) {
+                return -1;
+            }
+            if (deviceTO.deviceSettings.lite24x7.frequency > 0) {
+                return Math.max(30_000L, deviceTO.deviceSettings.lite24x7.frequency * 1000L);
+            }
+        }
+        return DEFAULT_SNAPSHOT_POLL_INTERVAL_MS;
     }
 
     public void forceSnapshotUpdate(@Nullable String snapshotUrl) {
@@ -200,13 +234,18 @@ public class DoorbellHandler extends RingDeviceHandler {
 
         if (snapshot.length > 0) {
             long timestamp = getSnapshotTimestamp();
-            lastSnapshotTimestamp = timestamp > 0 ? timestamp : System.currentTimeMillis();
+            long displayTimestamp = timestamp > 0 ? timestamp : System.currentTimeMillis();
+
+            // Only advance lastSnapshotTimestamp if the API returned a real server timestamp
+            if (timestamp > 0) {
+                lastSnapshotTimestamp = timestamp;
+            }
 
             ChannelUID channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT);
             updateState(channelUID, new RawType(snapshot, "image/jpeg"));
 
             channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT_TIMESTAMP);
-            updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(timestamp)));
+            updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(displayTimestamp)));
         }
     }
 

@@ -921,8 +921,7 @@ public class AccountHandler extends BaseBridgeHandler implements RingAccount {
         try {
             return restClient.getSnapshot(id, tokens);
         } catch (AuthenticationException ae) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                    "@text/offline.comm-error.auth-exception");
+            logger.debug("Failed to retrieve snapshot image for device {}: {}", id, ae.getMessage());
         }
         return new byte[0];
     }

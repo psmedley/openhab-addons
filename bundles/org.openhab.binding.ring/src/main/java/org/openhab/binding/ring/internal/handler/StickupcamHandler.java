@@ -52,7 +52,7 @@ public class StickupcamHandler extends RingDeviceHandler {
     private int lastBattery = -1;
     private long lastSnapshotTimestamp = -1;
     private long lastSnapshotCheckTime = 0;
-    private static final long SNAPSHOT_POLL_INTERVAL_MS = 10 * 60 * 1000;
+    private static final long DEFAULT_SNAPSHOT_POLL_INTERVAL_MS = 10 * 60 * 1000;
     private TimeZoneProvider timeZoneProvider;
     private boolean batterySupport = false;
     private boolean lightSupport = false;
@@ -236,29 +236,58 @@ public class StickupcamHandler extends RingDeviceHandler {
             updateState(channelUID, OnOffType.from(deviceTO.deviceSettings.motionDetectionEnabled));
         }
 
-        // Throttle background snapshot polling to once every 10 minutes
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastSnapshotCheckTime >= SNAPSHOT_POLL_INTERVAL_MS) {
-            lastSnapshotCheckTime = currentTime;
+        // Determine dynamic polling interval from Ring app settings
+        long pollIntervalMs = getSnapshotPollIntervalMs(deviceTO);
 
-            long timestamp = getSnapshotTimestamp();
-            if (timestamp > lastSnapshotTimestamp) {
-                logger.debug(
-                        "Background snapshot detected! timestamp = {} != lastSnapshotTimestamp {}, updating channel",
-                        timestamp, lastSnapshotTimestamp);
-                lastSnapshotTimestamp = timestamp;
+        if (pollIntervalMs == -1) {
+            logger.trace("Snapshot capture is disabled in Ring app settings for device {}. Skipping check.",
+                    getThing().getUID().getId());
+        } else {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastSnapshotCheckTime >= pollIntervalMs) {
+                lastSnapshotCheckTime = currentTime;
 
-                ChannelUID channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT);
-                updateState(channelUID, new RawType(getSnapshot(), "image/jpeg"));
+                long timestamp = getSnapshotTimestamp();
+                if (timestamp > 0) {
+                    if (timestamp > lastSnapshotTimestamp) {
+                        logger.debug(
+                                "Background snapshot detected! timestamp = {} != lastSnapshotTimestamp {}, updating channel",
+                                timestamp, lastSnapshotTimestamp);
+                        byte[] snapshot = getSnapshot();
+                        if (snapshot.length > 0) {
+                            lastSnapshotTimestamp = timestamp;
+                            ChannelUID channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT);
+                            updateState(channelUID, new RawType(snapshot, "image/jpeg"));
 
-                channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT_TIMESTAMP);
-                updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(timestamp)));
-            } else {
-                logger.debug(
-                        "No new background snapshot found during 10-minute check, timestamp = {} != lastSnapshotTimestamp {}",
-                        timestamp, lastSnapshotTimestamp);
+                            channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT_TIMESTAMP);
+                            updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(timestamp)));
+                        }
+                    }
+                } else {
+                    // Fallback if the timestamps API returned -1
+                    byte[] snapshot = getSnapshot();
+                    if (snapshot.length > 0) {
+                        ChannelUID channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT);
+                        updateState(channelUID, new RawType(snapshot, "image/jpeg"));
+
+                        channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT_TIMESTAMP);
+                        updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(currentTime)));
+                    }
+                }
             }
         }
+    }
+
+    private long getSnapshotPollIntervalMs(RingDeviceTO deviceTO) {
+        if (deviceTO.deviceSettings.lite24x7 != null) {
+            if (!deviceTO.deviceSettings.lite24x7.enabled) {
+                return -1;
+            }
+            if (deviceTO.deviceSettings.lite24x7.frequency > 0) {
+                return Math.max(30_000L, deviceTO.deviceSettings.lite24x7.frequency * 1000L);
+            }
+        }
+        return DEFAULT_SNAPSHOT_POLL_INTERVAL_MS;
     }
 
     public void forceSnapshotUpdate(@Nullable String snapshotUrl) {
@@ -280,13 +309,18 @@ public class StickupcamHandler extends RingDeviceHandler {
 
         if (snapshot.length > 0) {
             long timestamp = getSnapshotTimestamp();
-            lastSnapshotTimestamp = timestamp > 0 ? timestamp : System.currentTimeMillis();
+            long displayTimestamp = timestamp > 0 ? timestamp : System.currentTimeMillis();
+
+            // Only advance lastSnapshotTimestamp if the API returned a real server timestamp
+            if (timestamp > 0) {
+                lastSnapshotTimestamp = timestamp;
+            }
 
             ChannelUID channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT);
             updateState(channelUID, new RawType(snapshot, "image/jpeg"));
 
             channelUID = new ChannelUID(thing.getUID(), CHANNEL_STATUS_SNAPSHOT_TIMESTAMP);
-            updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(timestamp)));
+            updateState(channelUID, new DateTimeType(Instant.ofEpochMilli(displayTimestamp)));
         }
     }
 
